@@ -1,0 +1,4 @@
+- name: Run Collector tests
+  run: |
+    pip install -r services/collector/requirements.txt pytest
+    PYTHONPATH=. pytest services/collector/tests

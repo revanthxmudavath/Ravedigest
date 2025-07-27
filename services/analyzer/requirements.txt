@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+redis
+sqlalchemy
+psycopg2-binary
+trafilatura
+openai
+prometheus-client
+pydantic
+python-dotenv
+scikit-learn 
