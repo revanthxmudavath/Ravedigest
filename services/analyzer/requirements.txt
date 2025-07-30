@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+redis
+sqlalchemy
+psycopg2-binary
+
+openai
+prometheus-client
+pydantic
+python-dotenv
+scikit-learn 
+readability-lxml
+httpx
+beautifulsoup4
+rouge-score

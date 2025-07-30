@@ -1,9 +1,9 @@
 feedparser
 pydantic
-requests
 python-dotenv
-jinja2
-psycopg2-binary
 sqlalchemy
+psycopg2-binary
 redis
-dotenv
+uvicorn
+fastapi
+pytest
