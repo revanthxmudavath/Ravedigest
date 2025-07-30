@@ -26,7 +26,6 @@ RSS_FEEDS = [
     ("https://www.wired.com/feed/tag/ai/latest/rss", "Wired AI"),
     ("https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", "The Verge AI"),
     ("https://blog.kore.ai/rss.xml", "Kore.ai"),
-    ("https://www.aiplusinfo.com/feed/", "AIPLUS Info"),
     ("https://thenewstack.io/blog/feed/", "TheNewStack AI"),
 ]
 

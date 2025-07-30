@@ -27,5 +27,5 @@ def mark_developer_focus(title: str, summary: str) -> bool:
     max_sim = sims.max()
     logger.debug(f"Max cosine similarity with keywords: {max_sim:.3f}")
 
-    
-    return max_sim > 0.6
+
+    return bool(max_sim > 0.6)

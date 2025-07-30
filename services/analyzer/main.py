@@ -1,14 +1,18 @@
 from fastapi import FastAPI, Response
 from shared.database.session import SessionLocal, init_db
+from shared.database.models.article import Article
 import asyncio 
 import os
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 import redis
-from summarize import summarize_articles #to be done
-from filter import mark_developer_focus
+from services.analyzer.summarize import summarize_articles
+from services.analyzer.filter import mark_developer_focus
 import logging 
 from dotenv import load_dotenv
-import trafilatura 
+import httpx
+from readability import Document
+from bs4 import BeautifulSoup
+from sqlalchemy import text as sql_text, update
 load_dotenv()
 
 
@@ -29,7 +33,7 @@ async def on_startup():
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     logger.info(f"Using Redis URL: {redis_url}")
     try:
-        r = redis.from_url(redis_url)
+        r = redis.from_url(redis_url, decode_responses=True)
         app.state.redis = r
 
         asyncio.create_task(process_raw_stream())
@@ -61,33 +65,59 @@ async def safe_summarize(text):
             await asyncio.sleep(2 ** attempt)  # exponential backoff
     raise RuntimeError("LLM failed after 3 retries")
 
+async def fetch_and_extract(url: str) -> str:
+    try:
+        r = httpx.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
+        r.raise_for_status()
+    except Exception as e:
+        logger.warning(f"Failed to fetch {url}: {e}")
+        return ""
+    
+    doc = Document(r.text)
+    html = doc.summary()
+
+    soup = BeautifulSoup(html, "html.parser")
+    text = soup.get_text(separator="\n", strip=True)
+    return text or ""
 
 async def handle_message(payload, msg_id, r, stream, group):
     url = payload["url"]
-    text = trafilatura.extract(url) or ""
+    source = payload["source"]
+    text = await fetch_and_extract(url)
+    if not text:
+        logger.warning(f"Failed to extract text from source: {source}")
+        r.xack(stream, group, msg_id)
+        return  # Stop processing if text extraction failed
+    
     summary, score = await safe_summarize(text)
 
     title = payload["title"]
-    dev_focus = mark_developer_focus(title, summary)
+    dev_focus = bool(mark_developer_focus(title, summary))
     article_id = payload["id"]
 
+    summary = str(summary)
+    score = float(score)
+    
+
     with SessionLocal() as session:
-        session.execute(
-            """
-            UPDATE rave_articles
-            SET summary         = :summary,
-                relevance_score = :score,
-                developer_focus = :dev_focus
-            WHERE id = :id
-            """,
-            {
-                "summary": summary,
-                "score": score,
-                "dev_focus": dev_focus,
-                "id": article_id,
-            },
-        )
-        session.commit()
+        # stmt = (
+        #     update(Article)
+        #     .where(Article.id == article_id)
+        #     .values(
+        #         summary=summary,
+        #         relevance_score=score,
+        #         developer_focus=dev_focus
+        #     )
+        # )
+        
+        # session.execute(stmt)
+        ar = session.get(Article, article_id)
+        if ar:
+            ar.summary = summary
+            ar.relevance_score = score
+            ar.developer_focus = dev_focus
+            session.commit()
+            logger.info(f"Updated article {article_id} with summary and relevance score.")
 
     ARTICLE_PROCESSED.inc()
 
@@ -95,7 +125,7 @@ async def handle_message(payload, msg_id, r, stream, group):
         **payload,
         "summary": summary,
         "relevance_score": score,
-        "developer_focus": dev_focus,
+        "developer_focus": str(dev_focus).lower(), # Store as string for Redis compatibility
     }
 
     r.xadd("enriched_articles", enriched)
