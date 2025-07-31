@@ -1,3 +1,4 @@
+import uuid
 from fastapi import FastAPI, Response
 from shared.database.session import SessionLocal, init_db
 from shared.database.models.article import Article
@@ -93,7 +94,14 @@ async def handle_message(payload, msg_id, r, stream, group):
 
     title = payload["title"]
     dev_focus = bool(mark_developer_focus(title, summary))
-    article_id = payload["id"]
+    article_id_str = payload["id"]
+
+    try:
+        article_id = uuid.UUID(article_id_str)  # Convert string to UUID object
+    except ValueError as e:
+        logger.error(f"Invalid UUID format: {article_id_str}, error: {e}")
+        r.xack(stream, group, msg_id)
+        return
 
     summary = str(summary)
     score = float(score)
@@ -125,7 +133,7 @@ async def handle_message(payload, msg_id, r, stream, group):
         **payload,
         "summary": summary,
         "relevance_score": score,
-        "developer_focus": str(dev_focus).lower(), # Store as string for Redis compatibility
+        "developer_focus": str(dev_focus).lower(), 
     }
 
     r.xadd("enriched_articles", enriched)

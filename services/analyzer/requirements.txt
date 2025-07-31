@@ -3,7 +3,7 @@ uvicorn
 redis
 sqlalchemy
 psycopg2-binary
-
+alembic 
 openai
 prometheus-client
 pydantic
@@ -13,3 +13,6 @@ readability-lxml
 httpx
 beautifulsoup4
 rouge-score
+pytest
+pytest-asyncio
+fakeredis
