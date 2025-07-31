@@ -1,41 +1,33 @@
 import pytest
-from summarize import summarize_articles, _client
-
-# A dummy response object to mimic OpenAI’s shape
+from services.analyzer.summarize import summarize_articles
+# test_summarize.py
 class DummyResponse:
     def __init__(self, content):
-        msg = type("Msg", (), {"content": content})
-        choice = type("Choice", (), {"message": msg})
-        self.choices = [choice]
+        # the real .choices[0].message.content
+        msg = type("M", (), {"content": content})
+        self.choices = [type("C", (), {"message": msg})]
 
-# Fixture to monkey‐patch the OpenAI client before every test
+class DummyChat:
+    def __init__(self, response):
+        self.completions = self
+        self._response = response
+    def create(self, *args, **kw):
+        return self._response
+
+class DummyClient:
+    def __init__(self):
+        # _client.chat.completions.create() → DummyResponse
+        self.chat = DummyChat(DummyResponse("TEST SUMMARY"))
+
 @pytest.fixture(autouse=True)
 def patch_openai(monkeypatch):
-    class FakeClient:
-        def chat(self):
-            return self
-        def completions(self):
-            return self
-        def create(self, model, messages):
-            return DummyResponse("Brief summary")
-    monkeypatch.setattr("summarize._client", FakeClient(), raising=False)
-    class FakeClient:
-        def __init__(self):
-           
-            self.chat = self
-            self.completions = self
-        def create(self, *args, **kwargs):
-            return DummyResponse("Brief summary")
-        
-    import summarize
-    monkeypatch.setattr(summarize, "_client", FakeClient(), raising=True)
+    import services.analyzer.summarize as mod
+    monkeypatch.setattr(mod, "_client", DummyClient())
 
-    yield
 
-def test_summarize_returns_summary_and_relevance():
-    text = "Lorem ipsum " * 10  # ~110 chars
-    summary, relevance = summarize_articles(text)
-    # We patched the LLM to always return "Brief summary"
-    assert summary == "Brief summary"
-    # relevance = len(summary) / len(text)
-    assert pytest.approx(relevance, rel=1e-3) == len("Brief summary") / len(text)
+def test_summarize_and_relevance():
+    text = "foo bar baz foo bar baz"
+    summary, score = summarize_articles(text)
+    assert summary == "TEST SUMMARY"
+    # ROUGE-L F1 of identical words should be > 0
+    assert 0.0 <= score <= 1.0

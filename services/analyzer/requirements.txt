@@ -13,3 +13,6 @@ readability-lxml
 httpx
 beautifulsoup4
 rouge-score
+pytest
+pytest-asyncio
+fakeredis
