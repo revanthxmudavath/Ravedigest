@@ -60,6 +60,24 @@ services:
     ports:
       - "8002:8002"
     restart: unless-stopped
+    volumes:
+      - ./:/app
+  
+  composer:
+    build:
+      context: .
+      dockerfile: services/composer/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    
+    env_file:
+      - .env
+    ports:
+      - "8003:8003"
+    restart: unless-stopped
     
 
 volumes:
