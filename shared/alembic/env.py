@@ -7,7 +7,9 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from shared.database.session import engine
 from shared.database.base import Base
-from shared.database.models.article import Article
+
+import shared.database.models.article
+from services.composer.app.models import Digest
 
 
 from alembic import context

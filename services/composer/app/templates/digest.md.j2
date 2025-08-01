@@ -1,0 +1,7 @@
+# Daily Developer Digest — {{ title }}
+
+{% for art in articles %}
+## {{ loop.index }}. [{{ art.title }}]({{ art.url }})
+- **Source:** {{ art.source }}
+- **Summary:** {{ art.summary }}
+{% endfor %}
