@@ -2,6 +2,7 @@ import os
 import logging 
 from jinja2 import Environment, FileSystemLoader, select_autoescape, Template
 import time 
+import re
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -50,3 +51,19 @@ def render(name: str, **ctx) -> str:
             name, elapsed, ctx, e
         )
         raise
+
+def validate_markdown(md: str):
+    if not md.strip():
+        raise ValueError("Digest content is empty")
+    
+    if not re.search(r"^## \d+\.", md, re.MULTILINE):
+        raise ValueError("No article sections found")
+    
+    if "[[" in md or "]]" in md:
+        raise ValueError("Possible broken markdown link brackets")
+
+    # Optional: check summaries aren't all missing
+    if md.count("**Summary:**") == 0:
+        raise ValueError("No summaries detected")
+
+    return True

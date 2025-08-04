@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from shared.database.session import SessionLocal
 from services.composer.app.crud import get_top_articles, create_digest
 from services.composer.app.redis_client import publish_digest_ready
-from services.composer.app.template_engine import get_template, render
+from services.composer.app.template_engine import get_template, render, validate_markdown
 import uuid 
 from services.composer.app.schema import DigestOut
 import logging 
@@ -33,6 +33,12 @@ def compose(db=Depends(get_db)):
         logger.info("Rendering digest template")
         
         summary = render("digest.md.j2", title="Today", articles=articles)
+
+        try:
+            validate_markdown(summary)
+        except ValueError as ve:
+            logger.error("❌ Markdown validation failed: %s", ve)
+            raise HTTPException(status_code=500, detail=f"Invalid Markdown: {ve}")
     
         digest_id = uuid.uuid4()
         url = f"/digests/{digest_id}"
