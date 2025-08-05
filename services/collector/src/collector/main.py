@@ -1,3 +1,4 @@
+#services/collector/src/collector/main.py
 from collector.article import Article
 from collector.db import save_articles_to_db
 from collector.utils import is_duplicate, mark_seen, publish_raw

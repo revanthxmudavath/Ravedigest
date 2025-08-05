@@ -1,3 +1,5 @@
+#services/composer/app/main.py
+
 from fastapi import FastAPI, Depends, HTTPException
 from shared.database.session import SessionLocal
 from services.composer.app.crud import get_top_articles, create_digest

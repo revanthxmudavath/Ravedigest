@@ -1,3 +1,4 @@
+#services/notion_worker/app/main.py
 from fastapi import FastAPI
 from services.notion_worker.app.publisher import publish_latest_digest
 

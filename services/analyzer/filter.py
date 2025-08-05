@@ -1,4 +1,3 @@
-import os
 import logging 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -14,7 +13,7 @@ _kw_vecs = vectorizer.transform(_KEYWORDS)
 logger.info("Loaded keyword embeddings for filtering.")
 
 def mark_developer_focus(title: str, summary: str) -> bool:
-    text = (title + ". " + summary).lower()
+    text = (title + " " + summary).lower()
     logger.debug(f"Checking developer focus for text: {text}")
 
     for kw in _KEYWORDS:

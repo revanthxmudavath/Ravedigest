@@ -1,9 +1,14 @@
+#services/collector/src/collector/utils.py
 import redis
 import logging
 
 from shared.database.models.article import Article
+from shared.schemas.messages import RawArticle
+from collector.redis_client import get_redis_client
+from redis import Redis
 
 logger = logging.getLogger(__name__)
+
 
 # Initialize Redis client with retry logic
 redis_client = redis.Redis(
@@ -33,21 +38,26 @@ def mark_seen(url: str) -> None:
     except Exception as e:
         logger.error(f"Redis error: {e}")
 
-def publish_raw(article: Article) -> None:
+def publish_raw(article):
+    r: Redis = get_redis_client()
+
     try:
-        redis_client.xadd(
-            "raw_articles",
-            {
-            "id": str(article.id),
-            "title": article.title,
-            "url": str(article.url),
-            "feed_summary": article.summary or "",
-            "categories": ",".join(article.categories),
-            "published_at": article.published_at.isoformat() if article.published_at else "",
-            "source": article.source,  
-            },
-            maxlen=1000,
-            approximate=True   
-        )
+        raw_msg = RawArticle(
+        id=article.id,
+        title=article.title,
+        url=str(article.url),
+        summary=article.summary or "",
+        categories=",".join(article.categories),
+        published_at=article.published_at,
+        source=article.source,
+    )
+    
+        r.xadd(
+        "raw_articles",
+        raw_msg.model_dump(),
+        maxlen=1000,
+        approximate=True
+    )
+        logger.info("Composer server : Message hit Redis ")
     except Exception as e:
         logger.error(f"Error publishing raw article: {e}")

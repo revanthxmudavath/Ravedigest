@@ -1,11 +1,12 @@
-import uuid
+#services/analyzer/main.py
 from fastapi import FastAPI, Response
-from shared.database.session import SessionLocal, init_db
-from shared.database.models.article import Article
+from shared.database.session import init_db
+from shared.schemas.messages import EnrichedArticle, RawArticle
 import asyncio 
 import os
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 import redis
+from services.analyzer.crud import save_enriched_to_db
 from services.analyzer.summarize import summarize_articles
 from services.analyzer.filter import mark_developer_focus
 import logging 
@@ -13,7 +14,6 @@ from dotenv import load_dotenv
 import httpx
 from readability import Document
 from bs4 import BeautifulSoup
-from sqlalchemy import text as sql_text, update
 load_dotenv()
 
 
@@ -82,63 +82,30 @@ async def fetch_and_extract(url: str) -> str:
     return text or ""
 
 async def handle_message(payload, msg_id, r, stream, group):
-    url = payload["url"]
-    source = payload["source"]
-    text = await fetch_and_extract(url)
-    if not text:
-        logger.warning(f"Failed to extract text from source: {source}")
-        r.xack(stream, group, msg_id)
-        return  # Stop processing if text extraction failed
     
-    summary, score = await safe_summarize(text)
+    raw = RawArticle(**payload)
+    summary, score = await safe_summarize(await fetch_and_extract(raw.url))
+    dev_focus = mark_developer_focus(raw.title, summary)
+    raw_dict = raw.model_dump(exclude={"summary"})
+    enriched = EnrichedArticle(
+        **raw_dict,
+        summary=summary,
+        relevance_score=score,
+        developer_focus=dev_focus
+    )
 
-    title = payload["title"]
-    dev_focus = bool(mark_developer_focus(title, summary))
-    article_id_str = payload["id"]
-
-    try:
-        article_id = uuid.UUID(article_id_str)  # Convert string to UUID object
-    except ValueError as e:
-        logger.error(f"Invalid UUID format: {article_id_str}, error: {e}")
-        r.xack(stream, group, msg_id)
-        return
-
-    summary = str(summary)
-    score = float(score)
-    
-
-    with SessionLocal() as session:
-        # stmt = (
-        #     update(Article)
-        #     .where(Article.id == article_id)
-        #     .values(
-        #         summary=summary,
-        #         relevance_score=score,
-        #         developer_focus=dev_focus
-        #     )
-        # )
-        
-        # session.execute(stmt)
-        ar = session.get(Article, article_id)
-        if ar:
-            ar.summary = summary
-            ar.relevance_score = score
-            ar.developer_focus = dev_focus
-            session.commit()
-            logger.info(f"Updated article {article_id} with summary and relevance score.")
-
+    save_enriched_to_db(enriched)
     ARTICLE_PROCESSED.inc()
 
-    enriched = {
-        **payload,
-        "summary": summary,
-        "relevance_score": score,
-        "developer_focus": str(dev_focus).lower(), 
-    }
+    r.xadd(
+        "enriched_articles",
+        enriched.model_dump(),
+        maxlen=1000,
+        approximate=True
+    )
 
-    r.xadd("enriched_articles", enriched)
     r.xack(stream, group, msg_id)
-    logger.info("Processed and ACKed message %s", msg_id)
+    logger.info("Processed & Acked message %s", msg_id)
 
 
 async def process_raw_stream():
