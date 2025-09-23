@@ -1,1 +1,0 @@
-*/1 * * * * /app/services/notion_worker/run_cron.sh >> /var/log/cron.log 2>&1

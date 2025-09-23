@@ -26,3 +26,4 @@ class DigestReady(BaseModel):
     url: str = Field(..., description="Path or external link to the digest")
     source: str = Field(..., description="Service name that produced the digest")
     inserted_at: datetime = Field(..., description="Timestamp when digest was created")
+    summary: str = Field(..., description="Unique summary")

@@ -1,63 +1,57 @@
 #services/collector/src/collector/utils.py
-import redis
 import logging
-
 from shared.database.models.article import Article
 from shared.schemas.messages import RawArticle
-from collector.redis_client import get_redis_client
-from redis import Redis
+from shared.utils.redis_client import get_redis_client
+from shared.logging.logger import get_logger
+from shared.utils.retry import retry
 
-logger = logging.getLogger(__name__)
+logger = get_logger("collector.utils")
 
-
-# Initialize Redis client with retry logic
-redis_client = redis.Redis(
-    host="redis",
-    port=6379,
-    decode_responses=True,
-    socket_timeout=5,
-    retry_on_timeout=True,
-    max_connections=10
-)
-
+@retry(retryable_exceptions=(Exception,))
 def is_duplicate(url: str) -> bool:
+    """Check if URL has already been processed."""
     try:
+        redis_client = get_redis_client("collector")
         return redis_client.sismember("seen_urls", url)
-    except redis.ConnectionError as e:
-        logger.error(f"Redis connection error: {e}")
-        return False
     except Exception as e:
-        logger.error(f"Redis error: {e}")
+        logger.error(f"Redis error checking duplicate: {e}")
         return False
 
+@retry(retryable_exceptions=(Exception,))
 def mark_seen(url: str) -> None:
+    """Mark URL as seen in Redis."""
     try:
+        redis_client = get_redis_client("collector")
         redis_client.sadd("seen_urls", url)
-    except redis.ConnectionError as e:
-        logger.error(f"Redis connection error: {e}")
+        logger.debug(f"Marked URL as seen: {url}")
     except Exception as e:
-        logger.error(f"Redis error: {e}")
+        logger.error(f"Redis error marking URL as seen: {e}")
 
+@retry(retryable_exceptions=(Exception,))
 def publish_raw(article):
-    r: Redis = get_redis_client()
-
+    """Publish raw article to Redis stream."""
     try:
+        redis_client = get_redis_client("collector")
+        
         raw_msg = RawArticle(
-        id=article.id,
-        title=article.title,
-        url=str(article.url),
-        summary=article.summary or "",
-        categories=",".join(article.categories),
-        published_at=article.published_at,
-        source=article.source,
-    )
-    
-        r.xadd(
-        "raw_articles",
-        raw_msg.model_dump(),
-        maxlen=1000,
-        approximate=True
-    )
-        logger.info("Composer server : Message hit Redis ")
+            id=article.id,
+            title=article.title,
+            url=str(article.url),
+            summary=article.summary or "",
+            categories=",".join(article.categories),
+            published_at=article.published_at,
+            source=article.source,
+        )
+        
+        message_id = redis_client.xadd(
+            "raw_articles",
+            raw_msg.model_dump(),
+            maxlen=1000,
+            approximate=True
+        )
+        logger.info(f"Published raw article to stream: {message_id}")
+        
     except Exception as e:
         logger.error(f"Error publishing raw article: {e}")
+        raise

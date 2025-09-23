@@ -1,50 +1,45 @@
 #services/composer/app/redis_client.py
-import os
-import logging 
-import redis
-from redis.exceptions import RedisError
-from dotenv import load_dotenv
+from datetime import datetime, timezone
+from shared.schemas.messages import DigestReady
+from shared.utils.redis_client import get_redis_client as get_shared_redis_client
+from shared.logging.logger import get_logger
+from shared.utils.retry import retry
 
-load_dotenv()
+logger = get_logger("composer.redis_client")
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
-REDIS_URL = os.getenv("REDIS_URL")
-REDIS_HOST = os.getenv("REDIS_HOST")
-REDIS_PORT = int(os.getenv("REDIS_PORT"))
-REDIS_DB = int(os.getenv("REDIS_DB"))
-
-_client: redis.Redis | None = None 
-
-def get_redis_client() -> redis.Redis:
-    global _client 
-    if _client is not None:
-        return _client 
-    
+@retry(retryable_exceptions=(Exception,))
+def publish_digest_ready(digest) -> None:
+    """Publish digest ready event to Redis stream."""
     try:
-        if REDIS_URL:
-            client = redis.Redis.from_url(REDIS_URL)
-            logger.info("Connecting to Redis via from_url")
-        else:
-            client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
-            logger.info("Connecting to Redis via Redis function")
+        client = get_shared_redis_client("composer")
+        inserted_at = digest.inserted_at or datetime.now(timezone.utc)
 
-        client.ping()
-        logger.info("✅ Connected to Redis at %s:%d db=%d", REDIS_HOST, REDIS_PORT, REDIS_DB)
-        _client = client
-        return client
-    except RedisError as e:
-        logger.exception("❌ Failed to connect to Redis: %s", e)
-        raise
+        event = DigestReady(
+            version="1.0",
+            digest_id=str(digest.id),
+            title=digest.title,
+            summary=digest.summary,
+            url=digest.url,
+            source=digest.source,
+            inserted_at=inserted_at
+        )
 
-def publish_digest_ready(digest_id: str) -> None:
-    
-    client = get_redis_client()
-    try:
-        payload = {"digest_id": digest_id}
-        client.xadd("digest_stream", payload)
-        logger.info("Published digest_ready event: %r", payload)
-    except RedisError as e:
-        logger.exception("Failed to publish digest_ready for %s: %s", digest_id, e)
+        # Convert to string format for Redis
+        payload = {
+            "version": str(event.version),
+            "digest_id": str(event.digest_id),
+            "title": str(event.title),
+            "summary": str(event.summary),
+            "url": str(event.url),
+            "source": str(event.source),
+            "inserted_at": event.inserted_at.isoformat(),
+        }
+
+        # Publish to stream
+        message_id = client.xadd("digest_stream", payload)
+        logger.info(f"✅ Published digest_ready: {message_id}")
+
+    except Exception as e:
+        logger.error(f"❌ Failed to publish digest_ready: {e}")
         raise

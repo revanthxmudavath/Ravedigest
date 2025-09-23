@@ -1,25 +1,27 @@
 # services/analyzer/app/crud.py
 
-import logging
 from shared.database.session import SessionLocal
 from shared.database.models.article import Article
 from shared.schemas.messages import EnrichedArticle
+from shared.logging.logger import get_logger
+from shared.utils.retry import retry
 
-logger = logging.getLogger("analyzer.crud")
-logger.setLevel(logging.INFO)
+logger = get_logger("analyzer.crud")
 
+@retry(retryable_exceptions=(Exception,))
 def save_enriched_to_db(enriched: EnrichedArticle) -> None:
     """
     Insert or update an Article row based on the EnrichedArticle payload.
     """
-    with SessionLocal() as session:
+    session = SessionLocal()
+    try:
         existing = session.get(Article, enriched.id)
         if existing:
             existing.summary = enriched.summary
             existing.relevance_score = enriched.relevance_score
             existing.developer_focus = enriched.developer_focus
             session.commit()
-            logger.info(f"[DB] Updated Article {enriched.id}")
+            logger.info(f"Updated Article {enriched.id} with developer_focus={enriched.developer_focus}")
         else:
             new = Article(
                 id=enriched.id,
@@ -34,4 +36,10 @@ def save_enriched_to_db(enriched: EnrichedArticle) -> None:
             )
             session.add(new)
             session.commit()
-            logger.info(f"[DB] Inserted Article {enriched.id}")
+            logger.info(f"Inserted Article {enriched.id} with developer_focus={enriched.developer_focus}")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error saving enriched article {enriched.id}: {e}")
+        raise
+    finally:
+        session.close()
