@@ -1,5 +1,5 @@
 #services/analyzer/main.py
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, HTTPException
 from shared.database.session import init_db
 from shared.schemas.messages import EnrichedArticle, RawArticle
 from shared.config.settings import get_settings
@@ -9,6 +9,7 @@ from shared.utils.redis_client import get_redis_client
 from shared.utils.retry import async_retry
 import asyncio 
 import os
+import redis
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 from services.analyzer.crud import save_enriched_to_db
 from services.analyzer.summarize import summarize_articles
@@ -82,6 +83,51 @@ def metrics():
     data = generate_latest()
     logger.debug("Metrics endpoint called.")
     return Response(content=data, media_type=CONTENT_TYPE_LATEST)
+
+
+@app.get("/analyzer/status")
+def get_analyzer_status():
+    """Check if the analyzer has processed all articles."""
+    redis_client = get_redis_client("analyzer_status")
+    stream_name = "raw_articles"
+    group_name = f"{settings.service.consumer_group_prefix}-analyzer"
+
+    try:
+        # Get stream info
+        stream_info = redis_client.xinfo_stream(stream_name)
+        last_generated_id = stream_info.get("last-generated-id")
+
+        # Get consumer group info
+        groups = redis_client.xinfo_groups(stream_name)
+        group_info = next((g for g in groups if g["name"] == group_name), None)
+
+        if not group_info:
+            raise HTTPException(status_code=404, detail=f"Consumer group {group_name} not found.")
+
+        last_delivered_id = group_info.get("last-delivered-id")
+        pending_messages = group_info.get("pending")
+
+        is_idle = (last_generated_id == last_delivered_id) and (pending_messages == 0)
+
+        return {
+            "is_idle": is_idle,
+            "last_generated_id": last_generated_id,
+            "last_delivered_id": last_delivered_id,
+            "pending_messages": pending_messages,
+        }
+
+    except redis.exceptions.ResponseError as e:
+        # Handle case where the stream doesn't exist yet
+        if "no such key" in str(e).lower():
+            return {
+                "is_idle": True,
+                "status": "Stream not found, assuming idle."
+            }
+        logger.error(f"Redis error checking analyzer status: {e}")
+        raise HTTPException(status_code=500, detail="Error checking analyzer status.")
+    except Exception as e:
+        logger.error(f"Unexpected error checking analyzer status: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
 
 @async_retry(max_retries=3, base_delay=1.0, backoff_factor=2.0)
