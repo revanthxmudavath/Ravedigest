@@ -11,3 +11,4 @@ COPY shared ./shared
 ENV PYTHONPATH=/app
 
 CMD ["uvicorn", "collector.main:app", "--host", "0.0.0.0", "--port", "8001"]
+

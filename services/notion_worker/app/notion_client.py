@@ -1,5 +1,23 @@
+#services.notion_worker.app.notion_client.py
 import os
 from notion_client import Client
+from shared.schemas.messages import DigestReady
+from services.notion_worker.app.markdown_parser import markdown_to_blocks
 
 notion = Client(auth=os.getenv("NOTION_API_KEY"))
 DATABASE_ID = os.getenv("NOTION_DB_ID")
+
+
+def publish_to_notion(event: DigestReady) -> str:
+    """
+    Converts markdown summary to Notion blocks and creates a page.
+    Returns the Notion page URL.
+    """
+   
+    blocks = markdown_to_blocks(event.summary)
+
+
+    page = notion.create_page(title=event.title, children=blocks)
+
+  
+    return page["url"]

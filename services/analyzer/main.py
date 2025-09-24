@@ -1,41 +1,46 @@
-import uuid
+#services/analyzer/main.py
 from fastapi import FastAPI, Response
-from shared.database.session import SessionLocal, init_db
-from shared.database.models.article import Article
+from shared.database.session import init_db
+from shared.schemas.messages import EnrichedArticle, RawArticle
+from shared.config.settings import get_settings
+from shared.app_logging.logger import setup_logging, get_logger
+from shared.utils.health import create_analyzer_health_checker
+from shared.utils.redis_client import get_redis_client
+from shared.utils.retry import async_retry
 import asyncio 
 import os
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
-import redis
+from services.analyzer.crud import save_enriched_to_db
 from services.analyzer.summarize import summarize_articles
 from services.analyzer.filter import mark_developer_focus
-import logging 
-from dotenv import load_dotenv
 import httpx
 from readability import Document
 from bs4 import BeautifulSoup
-from sqlalchemy import text as sql_text, update
-load_dotenv()
 
-
-logger = logging.getLogger("analyzer")
-logger.setLevel(logging.INFO)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+# Setup logging
+logger = setup_logging("analyzer")
 
 ARTICLE_PROCESSED = Counter("analyzer_article_processed_total", "Total number of articles processed")
 
 app = FastAPI(title="Rave Digest Analyzer", description="Analyzes articles for developer focus and summarizes them.")
 
+# Get configuration
+settings = get_settings()
+
+
+# Create health checker
+health_checker = create_analyzer_health_checker()
 
 async def on_startup():
     logger.info("Starting Analyzer service...")
     init_db()  # Initialize the database connection
-    logger.info("Db initialized successfully.")
+    logger.info("Database initialized successfully.")
 
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    logger.info(f"Using Redis URL: {redis_url}")
     try:
-        r = redis.from_url(redis_url, decode_responses=True)
-        app.state.redis = r
+        # Test Redis connection
+        redis_client = get_redis_client("analyzer")
+        redis_client.ping()
+        logger.info("Redis connection established successfully")
 
         asyncio.create_task(process_raw_stream())
         logger.info("Launched background task to process raw articles.")
@@ -47,138 +52,167 @@ app.add_event_handler("startup", on_startup)
 
 @app.get("/analyzer/health")
 def health():
-    logger.debug("Health check endpoint called.")
-    return {"status": "ok"}
+    """Comprehensive health check endpoint."""
+    return health_checker.run_all_checks()
+
+@app.get("/analyzer/health/live")
+def liveness_check():
+    """Liveness check endpoint."""
+    return {"status": "alive", "service": "analyzer"}
+
+@app.get("/analyzer/health/ready")
+def readiness_check():
+    """Readiness check endpoint."""
+    health_data = health_checker.run_all_checks()
+    critical_checks = [check for check in health_data["checks"] 
+                      if check["name"] in ["database", "redis", "openai"]]
+    all_critical_healthy = all(check["status"] == "healthy" for check in critical_checks)
+    
+    return {
+        "status": "ready" if all_critical_healthy else "not_ready",
+        "service": "analyzer",
+        "critical_dependencies": {
+            check["name"]: check["status"] for check in critical_checks
+        }
+    }
 
 @app.get("/analyzer/metrics")
 def metrics():
+    """Prometheus metrics endpoint."""
     data = generate_latest()
     logger.debug("Metrics endpoint called.")
     return Response(content=data, media_type=CONTENT_TYPE_LATEST)
 
 
+@async_retry(max_retries=3, base_delay=1.0, backoff_factor=2.0)
 async def safe_summarize(text):
-    for attempt in range(3):
-        try:
-            return summarize_articles(text)
-        except Exception as e:
-            logger.warning(f"LLM error (attempt {attempt+1}): {e}")
-            await asyncio.sleep(2 ** attempt)  # exponential backoff
-    raise RuntimeError("LLM failed after 3 retries")
-
-async def fetch_and_extract(url: str) -> str:
+    """Safely summarize text with retry logic."""
     try:
-        r = httpx.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
-        r.raise_for_status()
+        return summarize_articles(text)
+    except Exception as e:
+        logger.warning(f"LLM error: {e}")
+        raise
+
+@async_retry(max_retries=3, base_delay=1.0, backoff_factor=2.0)
+async def fetch_and_extract(url: str) -> str:
+    """Fetch and extract text content from URL with retry logic."""
+    try:
+        async with httpx.AsyncClient(
+            timeout=settings.service.http_timeout,
+            follow_redirects=True,
+        ) as client:
+            response = await client.get(
+                url,
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+            response.raise_for_status()
+            
+            doc = Document(response.text)
+            html = doc.summary()
+
+            soup = BeautifulSoup(html, "html.parser")
+            text = soup.get_text(separator="\n", strip=True)
+            return text or ""
     except Exception as e:
         logger.warning(f"Failed to fetch {url}: {e}")
-        return ""
-    
-    doc = Document(r.text)
-    html = doc.summary()
-
-    soup = BeautifulSoup(html, "html.parser")
-    text = soup.get_text(separator="\n", strip=True)
-    return text or ""
+        raise
 
 async def handle_message(payload, msg_id, r, stream, group):
-    url = payload["url"]
-    source = payload["source"]
-    text = await fetch_and_extract(url)
-    if not text:
-        logger.warning(f"Failed to extract text from source: {source}")
-        r.xack(stream, group, msg_id)
-        return  # Stop processing if text extraction failed
-    
-    summary, score = await safe_summarize(text)
-
-    title = payload["title"]
-    dev_focus = bool(mark_developer_focus(title, summary))
-    article_id_str = payload["id"]
-
+    """Handle a single message from the raw articles stream."""
     try:
-        article_id = uuid.UUID(article_id_str)  # Convert string to UUID object
-    except ValueError as e:
-        logger.error(f"Invalid UUID format: {article_id_str}, error: {e}")
-        r.xack(stream, group, msg_id)
-        return
-
-    summary = str(summary)
-    score = float(score)
-    
-
-    with SessionLocal() as session:
-        # stmt = (
-        #     update(Article)
-        #     .where(Article.id == article_id)
-        #     .values(
-        #         summary=summary,
-        #         relevance_score=score,
-        #         developer_focus=dev_focus
-        #     )
-        # )
+        raw = RawArticle(**payload)
+        logger.info(f"Processing article: {raw.title[:50]}...")
         
-        # session.execute(stmt)
-        ar = session.get(Article, article_id)
-        if ar:
-            ar.summary = summary
-            ar.relevance_score = score
-            ar.developer_focus = dev_focus
-            session.commit()
-            logger.info(f"Updated article {article_id} with summary and relevance score.")
+        # Extract and summarize content
+        content = await fetch_and_extract(raw.url)
+        summary, score = await safe_summarize(content)
+        
+        # Check developer focus
+        dev_focus = mark_developer_focus(raw.title, summary)
+        
+        # Create enriched article
+        raw_dict = raw.model_dump(exclude={"summary"})
+        enriched = EnrichedArticle(
+            **raw_dict,
+            summary=summary,
+            relevance_score=score,
+            developer_focus=dev_focus
+        )
 
-    ARTICLE_PROCESSED.inc()
+        # Save to database
+        save_enriched_to_db(enriched)
+        ARTICLE_PROCESSED.inc()
 
-    enriched = {
-        **payload,
-        "summary": summary,
-        "relevance_score": score,
-        "developer_focus": str(dev_focus).lower(), 
-    }
+        # Publish to enriched articles stream
+        redis_client = get_redis_client("analyzer")
+        redis_client.xadd(
+            "enriched_articles",
+            enriched.model_dump(),
+            maxlen=settings.service.stream_max_length,
+            approximate=True
+        )
 
-    r.xadd("enriched_articles", enriched)
-    r.xack(stream, group, msg_id)
-    logger.info("Processed and ACKed message %s", msg_id)
+        # Acknowledge message
+        redis_client.xack(stream, group, msg_id)
+        logger.info(f"✅ Processed & acknowledged message {msg_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ Error processing message {msg_id}: {e}")
+        # Don't acknowledge failed messages - they'll be retried
+        raise
 
 
 async def process_raw_stream():
-    group, consumer = "analyzer-group", "analyzer-1"
+    """Process messages from the raw articles stream."""
+    group = f"{settings.service.consumer_group_prefix}-analyzer"
+    consumer = "analyzer-1"
     stream = "raw_articles"
 
-    r = app.state.redis
+    redis_client = get_redis_client("analyzer")
+    
     try:
-        r.xgroup_create(stream, group, id="0", mkstream=True)
+        redis_client.xgroup_create(stream, group, id="0", mkstream=True)
         logger.info("Consumer group %s created on stream %s", group, stream)
 
-        pending = r.xpending_range(stream, group, min='-', max='+', count=10)
+        # Process any pending messages
+        pending = redis_client.xpending_range(stream, group, '-', '+', 10)
         for entry in pending:
             msg_id = entry['message_id']
             logger.warning(f"Found unacked message {msg_id}, reclaiming...")
-            messages = r.xrange(stream, min=msg_id, max=msg_id)
+            messages = redis_client.xrange(stream, min=msg_id, max=msg_id)
             for _, payload in messages:
-                await handle_message(payload, msg_id, r , stream, group)
+                await handle_message(payload, msg_id, redis_client, stream, group)
 
-
-    except redis.exceptions.ResponseError as e:
-        logger.info("Consumer group %s already exists", group)
+    except Exception as e:
+        if "BUSYGROUP" in str(e):
+            logger.info("Consumer group %s already exists", group)
+        else:
+            logger.error(f"Error creating consumer group: {e}")
+            raise
     
+    logger.info("Starting message processing loop...")
     while True:
-        logger.debug("Waiting for new messages on stream %s", stream)
-        entries = r.xreadgroup(group, consumer, {stream: ">"}, count=10, block=5000)
+        try:
+            logger.debug("Waiting for new messages on stream %s", stream)
+            entries = redis_client.xreadgroup(group, consumer, {stream: ">"}, count=10, block=5000)
 
-        if not entries:
-            continue 
+            if not entries:
+                continue 
 
-        for _, messages in entries:
-            for msg_id, payload in messages:
-                logger.info("Processing message %s", msg_id)
-                try:
-                    await handle_message(payload, msg_id, r, stream, group)
-
-                except Exception as e:
-                    logger.error(f"Error processing message {msg_id}: {e}")
-        
-        await asyncio.sleep(0.7)  # Avoid busy-waiting
+            for _, messages in entries:
+                for msg_id, payload in messages:
+                    logger.info("Processing message %s", msg_id)
+                    try:
+                        await handle_message(payload, msg_id, redis_client, stream, group)
+                    except Exception as e:
+                        logger.error(f"Error processing message {msg_id}: {e}")
+                        # Message will be retried on next iteration
+            
+            await asyncio.sleep(0.7)  # Avoid busy-waiting
+            
+        except Exception as e:
+            logger.error(f"Error in message processing loop: {e}")
+            await asyncio.sleep(5)  # Wait before retrying
 
 
 

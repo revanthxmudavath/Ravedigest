@@ -6,3 +6,6 @@ python-dotenv
 requests
 httpx
 uvicorn
+redis
+scikit-learn
+pydantic-settings

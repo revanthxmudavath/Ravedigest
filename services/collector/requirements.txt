@@ -1,5 +1,6 @@
 feedparser
 pydantic
+pydantic-settings
 python-dotenv
 sqlalchemy
 psycopg2-binary
@@ -7,3 +8,4 @@ redis
 uvicorn
 fastapi
 pytest
+scikit-learn

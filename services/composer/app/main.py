@@ -1,70 +1,67 @@
 from fastapi import FastAPI, Depends, HTTPException
-from shared.database.session import SessionLocal
-from services.composer.app.crud import get_top_articles, create_digest
-from services.composer.app.redis_client import publish_digest_ready
-from services.composer.app.template_engine import get_template, render, validate_markdown
-import uuid 
+from contextlib import asynccontextmanager
+import asyncio
+from shared.config.settings import get_settings
+from shared.app_logging.logger import setup_logging, get_logger
+from shared.utils.health import create_composer_health_checker
+from shared.database.session import init_db
+from services.composer.app.digest_utils import generate_and_publish_digest, get_db
 from services.composer.app.schema import DigestOut
-import logging 
 
+# Setup logging
+logger = setup_logging("composer")
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# Get configuration
+settings = get_settings()
 
-app = FastAPI()
+# Create health checker
+health_checker = create_composer_health_checker()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from services.composer.app.worker import consume_enriched
+    init_db()
+    task = asyncio.create_task(consume_enriched())
+    logger.info("🚀 Launched enriched_articles consumer")
+    yield   
+    task.cancel()  
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/compose/health")
 def health():
-    return {"status": "ok"}
+    """Comprehensive health check endpoint."""
+    return health_checker.run_all_checks()
+
+@app.get("/compose/health/live")
+def liveness_check():
+    """Liveness check endpoint."""
+    return {"status": "alive", "service": "composer"}
+
+@app.get("/compose/health/ready")
+def readiness_check():
+    """Readiness check endpoint."""
+    health_data = health_checker.run_all_checks()
+    critical_checks = [check for check in health_data["checks"] 
+                      if check["name"] in ["database", "redis"]]
+    all_critical_healthy = all(check["status"] == "healthy" for check in critical_checks)
+    
+    return {
+        "status": "ready" if all_critical_healthy else "not_ready",
+        "service": "composer",
+        "critical_dependencies": {
+            check["name"]: check["status"] for check in critical_checks
+        }
+    }
 
 @app.post("/compose", response_model=DigestOut)
 def compose(db=Depends(get_db)):
+    """Generate and publish a digest."""
     try:
-        logger.info("Fetching Top Articles")
-        articles = get_top_articles(db)
-
-        logger.info("Rendering digest template")
-        
-        summary = render("digest.md.j2", title="Today", articles=articles)
-
-        try:
-            validate_markdown(summary)
-        except ValueError as ve:
-            logger.error("❌ Markdown validation failed: %s", ve)
-            raise HTTPException(status_code=500, detail=f"Invalid Markdown: {ve}")
-    
-        digest_id = uuid.uuid4()
-        url = f"/digests/{digest_id}"
-        source = "AI-Tech"
-
-        logger.info("Persisting digest %s", digest_id)
-        digest = create_digest(
-            db,
-            title="Today’s Digest",
-            summary=summary,
-            url=url,
-            source=source,
-        )
-
-        logger.info("Publishing digest_ready for %s", digest.id)
-        publish_digest_ready(str(digest.id))
-
-        return DigestOut(
-            digest_id=digest.id,
-            title=digest.title,
-            summary=digest.summary,
-            url=digest.url,
-            source=digest.source,
-        )
-
+        logger.info("Starting digest composition")
+        digest = generate_and_publish_digest(db)
+        logger.info(f"Successfully composed digest: {digest.id}")
+        return DigestOut.model_validate(digest, from_attributes=True)
     except Exception as e:
-        logger.exception("Unexpected error in /compose")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-   
+        logger.exception("Unexpected error in /compose: %s", e)
+        raise HTTPException(500, "Internal Server Error")

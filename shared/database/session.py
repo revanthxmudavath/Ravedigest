@@ -2,27 +2,51 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .base import Base
 from .models.article import Article
-import os 
-from dotenv import load_dotenv
+from .models.digest import Digest
+from shared.config.settings import get_settings
+from shared.app_logging.logger import get_logger
 import logging
-load_dotenv()
 
-POSTGRES_URL = os.getenv("POSTGRES_URL")
+logger = get_logger("database")
 
-# POSTGRES_URL = (
-#     f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
-#     f"@postgres:5432/{os.getenv('POSTGRES_DB')}"  
-# )
+# Get database configuration
+settings = get_settings()
+POSTGRES_URL = settings.database.postgres_url
 
+# Configure SQLAlchemy logging
 logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
-print("▶︎ Connecting to POSTGRES_URL =", POSTGRES_URL)
-engine = create_engine(POSTGRES_URL, echo=True)  
+logger.info(f"▶︎ Connecting to database: {POSTGRES_URL.split('@')[1] if '@' in POSTGRES_URL else 'localhost'}")
+
+# Create engine with connection pooling
+engine = create_engine(
+    POSTGRES_URL, 
+    echo=True,
+    pool_size=10,
+    max_overflow=20,
+    pool_pre_ping=True,
+    pool_recycle=3600
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
-    logging.info("✅ DB initialized")
+    """Initialize database tables."""
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("✅ Database initialized successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize database: {e}")
+        raise
 
-# init_db()
+def get_db_session():
+    """Get a database session with proper error handling."""
+    session = SessionLocal()
+    try:
+        yield session
+    except Exception as e:
+        logger.error(f"Database session error: {e}")
+        session.rollback()
+        raise
+    finally:
+        session.close()
