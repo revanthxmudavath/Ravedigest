@@ -3,27 +3,56 @@ Centralized configuration management for RaveDigest services.
 Uses Pydantic Settings for validation and type safety.
 """
 
-import os
-from typing import List, Optional
-from pydantic import BaseSettings, Field, validator
 from functools import lru_cache
+from typing import List, Optional
+
+from pydantic import AliasChoices, Field, validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class DatabaseSettings(BaseSettings):
+class AppBaseSettings(BaseSettings):
+    """Base settings with shared configuration."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+
+class DatabaseSettings(AppBaseSettings):
     """Database configuration settings."""
-    
-    postgres_url: str = Field(..., env="POSTGRES_URL")
-    postgres_user: str = Field(default="postgres", env="POSTGRES_USER")
-    postgres_password: str = Field(..., env="POSTGRES_PASSWORD")
-    postgres_db: str = Field(default="digest_db", env="POSTGRES_DB")
-    postgres_host: str = Field(default="postgres", env="POSTGRES_HOST")
-    postgres_port: int = Field(default=5432, env="POSTGRES_PORT")
-    
+
+    postgres_url: Optional[str] = Field(
+        default=None,
+        validation_alias="POSTGRES_URL",
+    )
+    postgres_user: str = Field(
+        default="postgres",
+        validation_alias="POSTGRES_USER",
+    )
+    postgres_password: str = Field(
+        ...,
+        validation_alias="POSTGRES_PASSWORD",
+    )
+    postgres_db: str = Field(
+        default="digest_db",
+        validation_alias="POSTGRES_DB",
+    )
+    postgres_host: str = Field(
+        default="postgres",
+        validation_alias="POSTGRES_HOST",
+    )
+    postgres_port: int = Field(
+        default=5432,
+        validation_alias="POSTGRES_PORT",
+    )
+
     @validator("postgres_url", pre=True)
     def validate_postgres_url(cls, v, values):
         """Ensure POSTGRES_URL is properly formatted."""
         if not v:
-            # Construct URL from components if not provided
             user = values.get("postgres_user", "postgres")
             password = values.get("postgres_password", "")
             host = values.get("postgres_host", "postgres")
@@ -33,20 +62,34 @@ class DatabaseSettings(BaseSettings):
         return v
 
 
-class RedisSettings(BaseSettings):
+class RedisSettings(AppBaseSettings):
     """Redis configuration settings."""
-    
-    redis_url: Optional[str] = Field(default=None, env="REDIS_URL")
-    redis_host: str = Field(default="redis", env="REDIS_HOST")
-    redis_port: int = Field(default=6379, env="REDIS_PORT")
-    redis_db: int = Field(default=0, env="REDIS_DB")
-    redis_password: Optional[str] = Field(default=None, env="REDIS_PASSWORD")
-    
+
+    redis_url: Optional[str] = Field(
+        default=None,
+        validation_alias="REDIS_URL",
+    )
+    redis_host: str = Field(
+        default="redis",
+        validation_alias="REDIS_HOST",
+    )
+    redis_port: int = Field(
+        default=6379,
+        validation_alias="REDIS_PORT",
+    )
+    redis_db: int = Field(
+        default=0,
+        validation_alias="REDIS_DB",
+    )
+    redis_password: Optional[str] = Field(
+        default=None,
+        validation_alias="REDIS_PASSWORD",
+    )
+
     @validator("redis_url", pre=True)
     def validate_redis_url(cls, v, values):
         """Ensure Redis URL is properly formatted."""
         if not v:
-            # Construct URL from components if not provided
             host = values.get("redis_host", "redis")
             port = values.get("redis_port", 6379)
             db = values.get("redis_db", 0)
@@ -57,26 +100,43 @@ class RedisSettings(BaseSettings):
         return v
 
 
-class OpenAISettings(BaseSettings):
+class OpenAISettings(AppBaseSettings):
     """OpenAI API configuration settings."""
-    
-    api_key: str = Field(..., env="OPENAI_API_KEY")
-    model: str = Field(default="gpt-4o-mini", env="OPENAI_MODEL")
-    max_tokens: int = Field(default=1000, env="OPENAI_MAX_TOKENS")
-    temperature: float = Field(default=0.7, env="OPENAI_TEMPERATURE")
+
+    api_key: str = Field(
+        ...,
+        validation_alias="OPENAI_API_KEY",
+    )
+    model: str = Field(
+        default="gpt-4o-mini",
+        validation_alias="OPENAI_MODEL",
+    )
+    max_tokens: int = Field(
+        default=1000,
+        validation_alias="OPENAI_MAX_TOKENS",
+    )
+    temperature: float = Field(
+        default=0.7,
+        validation_alias="OPENAI_TEMPERATURE",
+    )
 
 
-class NotionSettings(BaseSettings):
+class NotionSettings(AppBaseSettings):
     """Notion API configuration settings."""
-    
-    api_key: str = Field(..., env="NOTION_API_KEY")
-    database_id: str = Field(..., env="NOTION_DB_ID")
+
+    api_key: str = Field(
+        ...,
+        validation_alias="NOTION_API_KEY",
+    )
+    database_id: str = Field(
+        ...,
+        validation_alias=AliasChoices("NOTION_DB_ID", "NOTION_DATABASE_ID"),
+    )
 
 
-class ServiceSettings(BaseSettings):
+class ServiceSettings(AppBaseSettings):
     """Service-specific configuration settings."""
-    
-    # Collector settings
+
     rss_feeds: List[str] = Field(
         default=[
             "https://techcrunch.com/category/artificial-intelligence/feed",
@@ -85,35 +145,70 @@ class ServiceSettings(BaseSettings):
             "https://blog.kore.ai/rss.xml",
             "https://thenewstack.io/blog/feed/",
         ],
-        env="RSS_FEEDS"
+        validation_alias="RSS_FEEDS",
     )
-    
-    # Analyzer settings
     developer_keywords: List[str] = Field(
         default=[
-            "ai", "machine learning", "deep learning", "neural network",
-            "ai engineering", "developer", "programming", "mcp", "langchain",
-            "openai", "anthropic", "python", "javascript", "typescript",
-            "api", "microservices", "kubernetes", "docker", "aws", "gcp"
+            "ai",
+            "machine learning",
+            "deep learning",
+            "neural network",
+            "ai engineering",
+            "developer",
+            "programming",
+            "mcp",
+            "langchain",
+            "openai",
+            "anthropic",
+            "python",
+            "javascript",
+            "typescript",
+            "api",
+            "microservices",
+            "kubernetes",
+            "docker",
+            "aws",
+            "gcp",
         ],
-        env="DEVELOPER_KEYWORDS"
+        validation_alias="DEVELOPER_KEYWORDS",
     )
-    cosine_similarity_threshold: float = Field(default=0.6, env="COSINE_SIMILARITY_THRESHOLD")
-    max_articles_per_digest: int = Field(default=20, env="MAX_ARTICLES_PER_DIGEST")
-    
-    # Redis Stream settings
-    stream_max_length: int = Field(default=1000, env="STREAM_MAX_LENGTH")
-    consumer_group_prefix: str = Field(default="ravedigest", env="CONSUMER_GROUP_PREFIX")
-    
-    # Retry settings
-    max_retries: int = Field(default=3, env="MAX_RETRIES")
-    retry_delay: float = Field(default=1.0, env="RETRY_DELAY")
-    retry_backoff_factor: float = Field(default=2.0, env="RETRY_BACKOFF_FACTOR")
-    
-    # Timeout settings
-    http_timeout: float = Field(default=30.0, env="HTTP_TIMEOUT")
-    redis_timeout: float = Field(default=5.0, env="REDIS_TIMEOUT")
-    
+    cosine_similarity_threshold: float = Field(
+        default=0.6,
+        validation_alias="COSINE_SIMILARITY_THRESHOLD",
+    )
+    max_articles_per_digest: int = Field(
+        default=20,
+        validation_alias="MAX_ARTICLES_PER_DIGEST",
+    )
+    stream_max_length: int = Field(
+        default=1000,
+        validation_alias="STREAM_MAX_LENGTH",
+    )
+    consumer_group_prefix: str = Field(
+        default="ravedigest",
+        validation_alias="CONSUMER_GROUP_PREFIX",
+    )
+    max_retries: int = Field(
+        default=3,
+        validation_alias="MAX_RETRIES",
+    )
+    retry_delay: float = Field(
+        default=1.0,
+        validation_alias="RETRY_DELAY",
+    )
+    retry_backoff_factor: float = Field(
+        default=2.0,
+        validation_alias="RETRY_BACKOFF_FACTOR",
+    )
+    http_timeout: float = Field(
+        default=30.0,
+        validation_alias="HTTP_TIMEOUT",
+    )
+    redis_timeout: float = Field(
+        default=5.0,
+        validation_alias="REDIS_TIMEOUT",
+    )
+
     @validator("rss_feeds", "developer_keywords", pre=True)
     def parse_list_from_string(cls, v):
         """Parse comma-separated string into list if needed."""
@@ -122,37 +217,48 @@ class ServiceSettings(BaseSettings):
         return v
 
 
-class LoggingSettings(BaseSettings):
+class LoggingSettings(AppBaseSettings):
     """Logging configuration settings."""
-    
-    level: str = Field(default="INFO", env="LOG_LEVEL")
+
+    level: str = Field(
+        default="INFO",
+        validation_alias="LOG_LEVEL",
+    )
     format: str = Field(
         default="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        env="LOG_FORMAT"
+        validation_alias="LOG_FORMAT",
     )
-    include_correlation_id: bool = Field(default=True, env="LOG_INCLUDE_CORRELATION_ID")
-    json_logs: bool = Field(default=False, env="JSON_LOGS")
+    include_correlation_id: bool = Field(
+        default=True,
+        validation_alias="LOG_INCLUDE_CORRELATION_ID",
+    )
+    json_logs: bool = Field(
+        default=False,
+        validation_alias="JSON_LOGS",
+    )
 
 
-class Settings(BaseSettings):
+class Settings(AppBaseSettings):
     """Main settings class that combines all configuration sections."""
-    
+
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     openai: OpenAISettings = Field(default_factory=OpenAISettings)
     notion: NotionSettings = Field(default_factory=NotionSettings)
     service: ServiceSettings = Field(default_factory=ServiceSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
-    
-    # Service identification
-    service_name: str = Field(default="ravedigest", env="SERVICE_NAME")
-    environment: str = Field(default="development", env="ENVIRONMENT")
-    version: str = Field(default="1.0.0", env="SERVICE_VERSION")
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    service_name: str = Field(
+        default="ravedigest",
+        validation_alias="SERVICE_NAME",
+    )
+    environment: str = Field(
+        default="development",
+        validation_alias="ENVIRONMENT",
+    )
+    version: str = Field(
+        default="1.0.0",
+        validation_alias="SERVICE_VERSION",
+    )
 
 
 @lru_cache()

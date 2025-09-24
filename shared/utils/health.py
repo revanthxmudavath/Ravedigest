@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from shared.config.settings import get_settings
 from shared.logging.logger import get_logger
 from shared.utils.redis_client import get_redis_client
-
+from sqlalchemy import text
 logger = get_logger(__name__)
 
 
@@ -58,7 +58,7 @@ class HealthChecker:
         try:
             from shared.database.session import SessionLocal
             with SessionLocal() as session:
-                session.execute("SELECT 1")
+                session.execute(text("SELECT 1"))
             
             response_time = (datetime.now() - start_time).total_seconds() * 1000
             return HealthCheck(

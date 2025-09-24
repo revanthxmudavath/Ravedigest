@@ -122,7 +122,7 @@ def retry(
     return decorator
 
 
-async def async_retry(
+def async_retry(
     max_retries: Optional[int] = None,
     base_delay: Optional[float] = None,
     max_delay: Optional[float] = None,

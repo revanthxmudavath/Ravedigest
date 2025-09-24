@@ -97,8 +97,14 @@ async def safe_summarize(text):
 async def fetch_and_extract(url: str) -> str:
     """Fetch and extract text content from URL with retry logic."""
     try:
-        async with httpx.AsyncClient(timeout=settings.service.http_timeout) as client:
-            response = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        async with httpx.AsyncClient(
+            timeout=settings.service.http_timeout,
+            follow_redirects=True,
+        ) as client:
+            response = await client.get(
+                url,
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
             response.raise_for_status()
             
             doc = Document(response.text)
@@ -169,7 +175,7 @@ async def process_raw_stream():
         logger.info("Consumer group %s created on stream %s", group, stream)
 
         # Process any pending messages
-        pending = redis_client.xpending_range(stream, group, min='-', max='+', count=10)
+        pending = redis_client.xpending_range(stream, group, '-', '+', 10)
         for entry in pending:
             msg_id = entry['message_id']
             logger.warning(f"Found unacked message {msg_id}, reclaiming...")

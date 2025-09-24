@@ -15,13 +15,28 @@ logger = get_logger(__name__)
 
 class RedisClient:
     """Enhanced Redis client with retry logic and connection pooling."""
-    
+
     def __init__(self, service_name: str):
         self.service_name = service_name
         self.settings = get_settings()
         self._client: Optional[redis.Redis] = None
         self._logger = get_logger(f"{service_name}.redis")
-    
+
+    def _serialize_value(self, value: Any) -> Any:
+        """Convert values to Redis-compatible types."""
+        if value is None:
+            return ""
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (bytes, str, int, float)):
+            return value
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        return str(value)
+
     def _get_client(self) -> redis.Redis:
         """Get or create Redis client with connection pooling."""
         if self._client is None:
@@ -104,11 +119,32 @@ class RedisClient:
             self._logger.error(f"Failed to check set membership {key}: {e}")
             return False
     
-    def xadd(self, stream: str, fields: Dict[str, Any], maxlen: Optional[int] = None) -> str:
-        """Add message to Redis stream."""
+    def xadd(
+        self,
+        stream: str,
+        fields: Dict[str, Any],
+        maxlen: Optional[int] = None,
+        approximate: bool = True,
+        *,
+        id: str = "*",
+        nomkstream: bool = False,
+        minid: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> str:
+        """Add message to a Redis stream with optional trimming."""
         try:
             client = self._get_client()
-            return client.xadd(stream, fields, maxlen=maxlen, approximate=True)
+            encoded_fields = {k: self._serialize_value(v) for k, v in fields.items()}
+            return client.xadd(
+                stream,
+                encoded_fields,
+                id=id,
+                maxlen=maxlen,
+                approximate=approximate,
+                nomkstream=nomkstream,
+                minid=minid,
+                limit=limit,
+            )
         except Exception as e:
             self._logger.error(f"Failed to add to stream {stream}: {e}")
             raise
@@ -155,7 +191,7 @@ class RedisClient:
         """Get pending messages in consumer group."""
         try:
             client = self._get_client()
-            return client.xpending_range(stream, group, min=min_id, max=max_id, count=count)
+            return client.xpending_range(stream, group, min_id, max_id, count)
         except Exception as e:
             self._logger.error(f"Failed to get pending messages: {e}")
             return []
@@ -209,3 +245,4 @@ def get_redis_client_legacy() -> redis.Redis:
             password=settings.redis.redis_password,
             decode_responses=True
         )
+
