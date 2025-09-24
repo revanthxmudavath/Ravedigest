@@ -10,7 +10,7 @@ import time
 from typing import Callable, Any, Optional, Type, Tuple, Union
 from functools import wraps
 from shared.config.settings import get_settings
-from shared.logging.logger import get_logger
+from shared.app_logging.logger import get_logger
 
 logger = get_logger(__name__)
 

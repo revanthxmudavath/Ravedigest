@@ -9,7 +9,7 @@ from services.notion_worker.app.markdown_parser import markdown_to_blocks
 from services.notion_worker.app.utils import retry_with_backoff
 from services.notion_worker.app.notion_client import publish_to_notion
 from shared.config.settings import get_settings
-from shared.logging.logger import get_logger
+from shared.app_logging.logger import get_logger
 from shared.utils.redis_client import get_redis_client
 
 logger = get_logger("notion.worker")

@@ -8,7 +8,7 @@ import logging
 from typing import Optional, Any, Dict, List, Tuple
 from contextlib import asynccontextmanager
 from shared.config.settings import get_settings
-from shared.logging.logger import get_logger
+from shared.app_logging.logger import get_logger
 
 logger = get_logger(__name__)
 

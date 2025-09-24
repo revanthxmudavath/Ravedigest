@@ -3,7 +3,7 @@ import logging
 from shared.database.models.article import Article
 from shared.schemas.messages import RawArticle
 from shared.utils.redis_client import get_redis_client
-from shared.logging.logger import get_logger
+from shared.app_logging.logger import get_logger
 from shared.utils.retry import retry
 
 logger = get_logger("collector.utils")

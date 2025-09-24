@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from dataclasses import dataclass
 from shared.config.settings import get_settings
-from shared.logging.logger import get_logger
+from shared.app_logging.logger import get_logger
 from shared.utils.redis_client import get_redis_client
 from sqlalchemy import text
 logger = get_logger(__name__)

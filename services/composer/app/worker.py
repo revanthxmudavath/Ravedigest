@@ -4,7 +4,7 @@ import asyncio
 from shared.schemas.messages import EnrichedArticle
 from shared.utils.redis_client import get_redis_client
 from shared.config.settings import get_settings
-from shared.logging.logger import get_logger
+from shared.app_logging.logger import get_logger
 from services.composer.app.digest_utils import get_db, generate_and_publish_digest
 
 logger = get_logger("composer.worker")

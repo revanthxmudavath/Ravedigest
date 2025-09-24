@@ -3,7 +3,7 @@ from fastapi import FastAPI, Response
 from shared.database.session import init_db
 from shared.schemas.messages import EnrichedArticle, RawArticle
 from shared.config.settings import get_settings
-from shared.logging.logger import setup_logging, get_logger
+from shared.app_logging.logger import setup_logging, get_logger
 from shared.utils.health import create_analyzer_health_checker
 from shared.utils.redis_client import get_redis_client
 from shared.utils.retry import async_retry

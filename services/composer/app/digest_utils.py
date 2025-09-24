@@ -5,7 +5,7 @@ from services.composer.app.redis_client import publish_digest_ready
 from services.composer.app.template_engine import render, validate_markdown
 from shared.database.session import SessionLocal
 from shared.config.settings import get_settings
-from shared.logging.logger import get_logger
+from shared.app_logging.logger import get_logger
 
 logger = get_logger("composer.digest_utils")
 settings = get_settings()

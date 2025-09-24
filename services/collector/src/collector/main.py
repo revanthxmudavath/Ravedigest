@@ -4,7 +4,7 @@ from collector.db import save_articles_to_db
 from collector.utils import is_duplicate, mark_seen, publish_raw
 from shared.database.session import init_db
 from shared.config.settings import get_settings
-from shared.logging.logger import setup_logging, get_logger
+from shared.app_logging.logger import setup_logging, get_logger
 from shared.utils.health import create_collector_health_checker
 from uuid import UUID
 from fastapi import FastAPI, HTTPException

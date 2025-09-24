@@ -4,7 +4,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from services.notion_worker.app.worker import consume_digest_stream
 from shared.config.settings import get_settings
-from shared.logging.logger import setup_logging, get_logger
+from shared.app_logging.logger import setup_logging, get_logger
 from shared.utils.health import create_notion_health_checker
 
 # Setup logging

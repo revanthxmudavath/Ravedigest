@@ -1,6 +1,6 @@
 from shared.database.session import SessionLocal
 from shared.database.models.article import Article
-from shared.logging.logger import get_logger
+from shared.app_logging.logger import get_logger
 from shared.utils.retry import retry
 from sqlalchemy.exc import IntegrityError
 

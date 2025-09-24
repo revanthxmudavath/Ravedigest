@@ -2,8 +2,9 @@ from fastapi import FastAPI, Depends, HTTPException
 from contextlib import asynccontextmanager
 import asyncio
 from shared.config.settings import get_settings
-from shared.logging.logger import setup_logging, get_logger
+from shared.app_logging.logger import setup_logging, get_logger
 from shared.utils.health import create_composer_health_checker
+from shared.database.session import init_db
 from services.composer.app.digest_utils import generate_and_publish_digest, get_db
 from services.composer.app.schema import DigestOut
 
@@ -19,6 +20,7 @@ health_checker = create_composer_health_checker()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from services.composer.app.worker import consume_enriched
+    init_db()
     task = asyncio.create_task(consume_enriched())
     logger.info("🚀 Launched enriched_articles consumer")
     yield   
