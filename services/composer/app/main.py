@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException
-from contextlib import asynccontextmanager
+from fastapi import FastAPI, Depends, HTTPException, Response
+from contextlib import asynccontextmanager, suppress
+from fastapi import status
 import asyncio
 from shared.config.settings import get_settings
 from shared.app_logging.logger import setup_logging, get_logger
@@ -22,9 +23,14 @@ async def lifespan(app: FastAPI):
     from services.composer.app.worker import consume_enriched
     init_db()
     task = asyncio.create_task(consume_enriched())
-    logger.info("🚀 Launched enriched_articles consumer")
-    yield   
-    task.cancel()  
+    logger.info("Launched enriched_articles consumer")
+    try:
+        yield
+    finally:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+        logger.info("Composer consumer shut down cleanly")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -55,11 +61,15 @@ def readiness_check():
     }
 
 @app.post("/compose", response_model=DigestOut)
-def compose(db=Depends(get_db)):
+def compose(response: Response, db=Depends(get_db)):
     """Generate and publish a digest."""
     try:
         logger.info("Starting digest composition")
         digest = generate_and_publish_digest(db)
+        if digest is None:
+            logger.info("No articles available; skipping digest generation")
+            response.status_code = status.HTTP_204_NO_CONTENT
+            return None
         logger.info(f"Successfully composed digest: {digest.id}")
         return DigestOut.model_validate(digest, from_attributes=True)
     except Exception as e:

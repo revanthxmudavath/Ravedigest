@@ -2,7 +2,7 @@
 from fastapi import FastAPI, HTTPException
 import asyncio
 import redis
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from services.notion_worker.app.worker import consume_digest_stream
 from shared.config.settings import get_settings
 from shared.app_logging.logger import setup_logging, get_logger
@@ -20,11 +20,15 @@ health_checker = create_notion_health_checker()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Notion Worker lifespan triggered")
-    
+    logger.info("Notion worker lifespan triggered")
     task = asyncio.create_task(consume_digest_stream())
-    yield   
-    task.cancel() 
+    try:
+        yield
+    finally:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+        logger.info("Notion worker consumer shut down cleanly")
 
 app = FastAPI(lifespan=lifespan)
 

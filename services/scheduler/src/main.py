@@ -5,7 +5,7 @@ import os
 from threading import Thread
 from fastapi import FastAPI
 import uvicorn
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt, wait_fixed, RetryError
 from shared.app_logging.logger import setup_logging
 
 # Setup logging
@@ -17,12 +17,17 @@ COMPOSER_URL = os.getenv("COMPOSER_URL", "http://composer:8003")
 ANALYZER_URL = os.getenv("ANALYZER_URL", "http://analyzer:8002")
 NOTION_WORKER_URL = os.getenv("NOTION_WORKER_URL", "http://notion-worker:8004")
 
+
+REQUEST_TIMEOUT = float(os.getenv('SCHEDULER_HTTP_TIMEOUT', '30'))
+STATUS_TIMEOUT = float(os.getenv('SCHEDULER_STATUS_TIMEOUT', '15'))
+STATUS_MAX_ATTEMPTS = int(os.getenv('SCHEDULER_STATUS_MAX_ATTEMPTS', '35'))
+
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5))
 def trigger_collector():
     """Trigger the collector service to start collecting articles."""
     url = f"{COLLECTOR_URL}/collect/rss"
     logger.info(f"Triggering collector service at {url}")
-    response = requests.get(url)
+    response = requests.get(url, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     logger.info("Collector service triggered successfully.")
     return response.json()
@@ -32,16 +37,16 @@ def trigger_composer():
     """Trigger the composer service to generate a digest."""
     url = f"{COMPOSER_URL}/compose"
     logger.info(f"Triggering composer service at {url}")
-    response = requests.post(url)
+    response = requests.post(url, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     logger.info("Composer service triggered successfully.")
     return response.json()
 
-@retry(stop=stop_after_attempt(60), wait=wait_fixed(10))
+@retry(stop=stop_after_attempt(STATUS_MAX_ATTEMPTS), wait=wait_fixed(10))
 def wait_for_service(service_name: str, url: str):
     """Wait for a service to become idle."""
     logger.info(f"Waiting for {service_name} to become idle...")
-    response = requests.get(url)
+    response = requests.get(url, timeout=STATUS_TIMEOUT)
     response.raise_for_status()
     data = response.json()
     if not data.get("is_idle"):
@@ -51,19 +56,43 @@ def wait_for_service(service_name: str, url: str):
 def daily_job():
     """The job to be run daily."""
     logger.info("Starting daily job...")
+
     try:
         trigger_collector()
+    except Exception:
+        logger.exception("Failed to trigger collector service")
+        return
+
+    try:
         wait_for_service("analyzer", f"{ANALYZER_URL}/analyzer/status")
+    except RetryError:
+        logger.warning("Analyzer did not become idle after %s attempts; deferring to next schedule", STATUS_MAX_ATTEMPTS)
+        return
+    except Exception:
+        logger.exception("Error while waiting for analyzer to become idle")
+        return
+
+    try:
         trigger_composer()
+    except Exception:
+        logger.exception("Failed to trigger composer service")
+        return
+
+    try:
         wait_for_service("notion-worker", f"{NOTION_WORKER_URL}/notion/status")
-        logger.info("Daily job completed successfully.")
-    except Exception as e:
-        logger.error(f"An error occurred during the daily job: {e}")
+    except RetryError:
+        logger.warning("Notion worker did not become idle after %s attempts; deferring to next schedule", STATUS_MAX_ATTEMPTS)
+        return
+    except Exception:
+        logger.exception("Error while waiting for notion worker to become idle")
+        return
+
+    logger.info("Daily job completed successfully.")
 
 def run_schedule():
     """Run the scheduler."""
     # Schedule the job every day at 8:30 am
-    schedule.every().day.at("08:30").do(daily_job)
+    schedule.every().day.at("21:20").do(daily_job)   #"08:30"
 
     while True:
         schedule.run_pending()
@@ -82,7 +111,7 @@ def run_fastapi():
 
 if __name__ == "__main__":
     # Run the scheduler in a separate thread
-    scheduler_thread = Thread(target=run_schedule)
+    scheduler_thread = Thread(target=run_schedule, daemon=True)
     scheduler_thread.start()
 
     # Run the FastAPI app in the main thread
