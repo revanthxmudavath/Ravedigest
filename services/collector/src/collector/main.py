@@ -50,50 +50,50 @@ def readiness_check():
         }
     }
 
-@app.get("/collect/rss")
-def collect_articles():
-    """Collect articles from RSS feeds."""
-    total_collected = 0
-    total_skipped = 0 
-    total_errors = 0
+# @app.get("/collect/rss")
+# def collect_articles():
+#     """Collect articles from RSS feeds."""
+#     total_collected = 0
+#     total_skipped = 0 
+#     total_errors = 0
 
-    logger.info(f"🚀 Starting RSS collection from {len(RSS_FEEDS)} feeds")
+#     logger.info(f"🚀 Starting RSS collection from {len(RSS_FEEDS)} feeds")
 
-    for url, source in RSS_FEEDS:
-        try:
-            logger.info(f"📥 Parsing feed: {source}")
-            articles = parse.parse_feed(url, source)
-            logger.info(f"📄 Found {len(articles)} articles in {source}")
+#     for url, source in RSS_FEEDS:
+#         try:
+#             logger.info(f"📥 Parsing feed: {source}")
+#             articles = parse.parse_feed(url, source)
+#             logger.info(f"📄 Found {len(articles)} articles in {source}")
 
-            for article in articles:
-                try:
-                    if is_duplicate(article.url):
-                        logger.debug(f"🔁 Duplicate skipped: {article.url}")
-                        total_skipped += 1
-                        continue
+#             for article in articles:
+#                 try:
+#                     if is_duplicate(article.url):
+#                         logger.debug(f"🔁 Duplicate skipped: {article.url}")
+#                         total_skipped += 1
+#                         continue
 
-                    save_articles_to_db(article)
-                    mark_seen(article.url)
-                    publish_raw(article)
-                    total_collected += 1
-                    logger.debug(f"✅ Saved article: {article.title[:50]}...")
+#                     save_articles_to_db(article)
+#                     mark_seen(article.url)
+#                     publish_raw(article)
+#                     total_collected += 1
+#                     logger.debug(f"✅ Saved article: {article.title[:50]}...")
                     
-                except Exception as e:
-                    logger.error(f"❌ Error processing article {article.title}: {e}")
-                    total_errors += 1
-                    continue
+#                 except Exception as e:
+#                     logger.error(f"❌ Error processing article {article.title}: {e}")
+#                     total_errors += 1
+#                     continue
                     
-        except Exception as e:
-            logger.error(f"❌ Error parsing feed {source}: {e}")
-            total_errors += 1
-            continue
+#         except Exception as e:
+#             logger.error(f"❌ Error parsing feed {source}: {e}")
+#             total_errors += 1
+#             continue
     
-    logger.info(f"✅ Collection complete: {total_collected} articles saved, {total_skipped} duplicates skipped, {total_errors} errors")
+#     logger.info(f"✅ Collection complete: {total_collected} articles saved, {total_skipped} duplicates skipped, {total_errors} errors")
 
-    return {
-        "status": "success",
-        "total_collected": total_collected,
-        "total_skipped": total_skipped,
-        "total_errors": total_errors,
-        "feeds_processed": len(RSS_FEEDS)
-    }
+#     return {
+#         "status": "success",
+#         "total_collected": total_collected,
+#         "total_skipped": total_skipped,
+#         "total_errors": total_errors,
+#         "feeds_processed": len(RSS_FEEDS)
+#     }

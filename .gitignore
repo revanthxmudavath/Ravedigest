@@ -11,7 +11,14 @@ __pycache__/
 .venv/
 env/
 venv/
+
+# Environment files (NEVER commit these)
 .env
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.test
 
 # IDEs/editors
 .vscode/
@@ -38,3 +45,5 @@ dist/
 # Docker
 docker-compose.yml
 *.tar
+
+CLAUDE.md
