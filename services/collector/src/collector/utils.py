@@ -5,8 +5,10 @@ from shared.schemas.messages import RawArticle
 from shared.utils.redis_client import get_redis_client
 from shared.app_logging.logger import get_logger
 from shared.utils.retry import retry
+from shared.config.settings import get_settings
 
 logger = get_logger("collector.utils")
+settings = get_settings()
 
 @retry(retryable_exceptions=(Exception,))
 def is_duplicate(url: str) -> bool:
@@ -47,7 +49,7 @@ def publish_raw(article):
         message_id = redis_client.xadd(
             "raw_articles",
             raw_msg.model_dump(),
-            maxlen=1000,
+            maxlen=settings.service.stream_max_length,
             approximate=True
         )
         logger.info(f"Published raw article to stream: {message_id}")

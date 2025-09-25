@@ -5,6 +5,8 @@ Uses Pydantic Settings for validation and type safety.
 
 from functools import lru_cache
 from typing import List, Optional
+import re
+from urllib.parse import urlparse
 
 from pydantic import AliasChoices, Field, validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -133,6 +135,19 @@ class NotionSettings(AppBaseSettings):
         validation_alias=AliasChoices("NOTION_DB_ID", "NOTION_DATABASE_ID"),
     )
 
+    @validator("database_id")
+    def validate_database_id(cls, v):
+        """Validate Notion database ID format (should be UUID format without hyphens)."""
+        if not v:
+            raise ValueError("Notion database ID is required")
+
+        # Remove hyphens and check if it's 32 hexadecimal characters
+        cleaned_id = v.replace("-", "")
+        if not re.match(r"^[0-9a-fA-F]{32}$", cleaned_id):
+            raise ValueError("Notion database ID must be a valid UUID format (32 hexadecimal characters)")
+
+        return v
+
 
 class ServiceSettings(AppBaseSettings):
     """Service-specific configuration settings."""
@@ -214,6 +229,29 @@ class ServiceSettings(AppBaseSettings):
         """Parse comma-separated string into list if needed."""
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]
+        return v
+
+    @validator("rss_feeds")
+    def validate_rss_feeds(cls, v):
+        """Validate that RSS feeds are valid URLs."""
+        if not isinstance(v, list):
+            raise ValueError("RSS feeds must be a list")
+
+        for feed_url in v:
+            if not feed_url:
+                continue  # Skip empty strings
+
+            try:
+                parsed = urlparse(feed_url)
+                if not parsed.scheme or not parsed.netloc:
+                    raise ValueError(f"Invalid RSS feed URL: {feed_url}")
+
+                if parsed.scheme not in ['http', 'https']:
+                    raise ValueError(f"RSS feed URL must use HTTP or HTTPS: {feed_url}")
+
+            except Exception as e:
+                raise ValueError(f"Invalid RSS feed URL format: {feed_url} - {str(e)}")
+
         return v
 
 

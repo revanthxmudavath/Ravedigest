@@ -4,8 +4,11 @@ from typing import List, Optional
 from uuid import uuid4
 
 from collector.article import Article
+from shared.app_logging.logger import get_logger
 
 from email.utils import parsedate_to_datetime
+
+logger = get_logger("collector.parse")
 
 def parse_timestamp(source: str, ts_raw: str) -> datetime:
     """
@@ -64,7 +67,7 @@ def parse_feed(url: str, source: str) -> List[Article]:
             entries.append(article)
             
         except Exception as e:
-            print(f"Error parsing feed {url}: {e}")
+            logger.error(f"Error parsing feed {url}: {e}")
             continue
     
     return entries

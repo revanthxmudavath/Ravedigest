@@ -92,6 +92,26 @@ services:
       - "8004:8004"
     restart: unless-stopped
     
+  scheduler:
+    build:
+      context: .
+      dockerfile: services/scheduler/Dockerfile
+    depends_on:
+      collector:
+        condition: service_started
+      composer:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      COLLECTOR_URL: http://collector:8001
+      COMPOSER_URL: http://composer:8003
+      ANALYZER_URL: http://analyzer:8002
+      NOTION_WORKER_URL: http://notion-worker:8004
+    ports:
+      - "8005:8005"
+    restart: unless-stopped
+
 
 volumes:
   pgdata:
