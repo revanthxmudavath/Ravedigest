@@ -3,7 +3,7 @@ import asyncio
 import redis
 from shared.schemas.messages import DigestReady
 from shared.database.session import SessionLocal
-from services.composer.app.models import Digest
+from shared.database.models.digest import Digest
 from services.notion_worker.app.notion_client import notion, DATABASE_ID
 from services.notion_worker.app.markdown_parser import markdown_to_blocks
 from services.notion_worker.app.utils import retry_with_backoff
@@ -18,61 +18,6 @@ settings = get_settings()
 STREAM_KEY = "digest_stream"
 GROUP_NAME = f"{settings.service.consumer_group_prefix}-notion"
 CONSUMER_NAME = "notion_consumer_1"
-
-def ensure_group_exists(client: redis.Redis):
-    """Ensure consumer group exists for the stream."""
-    try:
-        groups = client.xinfo_groups(STREAM_KEY)
-        if not any(g["name"] == GROUP_NAME for g in groups):
-            client.xgroup_create(STREAM_KEY, GROUP_NAME, id="0", mkstream=True)
-            logger.info(f"✅ Created consumer group: {GROUP_NAME}")
-    except redis.exceptions.ResponseError as e:
-        if "BUSYGROUP" in str(e):
-            logger.info(f"Consumer group {GROUP_NAME} already exists")
-        else:
-            logger.error(f"Error creating consumer group: {e}")
-            raise
-
-def consume_enriched():
-    """Consume digest messages and publish to Notion."""
-    client = get_redis_client("notion_worker")
-    ensure_group_exists(client)
-
-    logger.info("🚀 Starting Redis group consumer...")
-
-    while True:
-        try:
-            response = client.xreadgroup(
-                groupname=GROUP_NAME,
-                consumername=CONSUMER_NAME,
-                streams={STREAM_KEY: ">"},
-                count=1,
-                block=5000
-            )
-
-            if response:
-                for stream_key, messages in response:
-                    for message_id, fields in messages:
-                        try:
-                            logger.info(f"📩 Received message {message_id}")
-                            payload = {k.decode(): v.decode() for k, v in fields.items()}
-                            event = DigestReady(**payload)
-
-                            notion_url = publish_to_notion(event)
-                            logger.info(f"✅ Published to Notion: {notion_url}")
-
-                            # Acknowledge after success
-                            client.xack(STREAM_KEY, GROUP_NAME, message_id)
-                            logger.info(f"🧾 Acknowledged message {message_id}")
-
-                        except Exception as e:
-                            logger.exception(f"❌ Failed to process message {message_id}: {e}")
-
-        except Exception as e:
-            logger.error(f"🔁 Redis consumer error: {e}")
-            import time
-            time.sleep(5)
-
 
 
 async def consume_digest_stream():

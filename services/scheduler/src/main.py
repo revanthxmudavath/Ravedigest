@@ -46,12 +46,29 @@ def trigger_composer():
 def wait_for_service(service_name: str, url: str):
     """Wait for a service to become idle."""
     logger.info(f"Waiting for {service_name} to become idle...")
-    response = requests.get(url, timeout=STATUS_TIMEOUT)
-    response.raise_for_status()
-    data = response.json()
-    if not data.get("is_idle"):
-        raise Exception(f"{service_name} is not idle yet.")
-    logger.info(f"{service_name} is idle.")
+
+    try:
+        response = requests.get(url, timeout=STATUS_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+
+        if not data.get("is_idle"):
+            # Check if there's a status message about stream not existing
+            status_msg = data.get("status", "")
+            if "Stream not found" in status_msg:
+                logger.info(f"{service_name} stream not found - assuming idle (no work to process)")
+                return
+            else:
+                raise Exception(f"{service_name} is not idle yet. {status_msg}")
+
+        logger.info(f"{service_name} is idle.")
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to check {service_name} status: {e}")
+        raise Exception(f"Cannot reach {service_name} status endpoint: {e}")
+    except Exception as e:
+        logger.error(f"Error checking {service_name} status: {e}")
+        raise
 
 def daily_job():
     """The job to be run daily."""
@@ -92,7 +109,7 @@ def daily_job():
 def run_schedule():
     """Run the scheduler."""
     # Schedule the job every day at 8:30 am
-    schedule.every().day.at("21:20").do(daily_job)   #"08:30"
+    schedule.every().day.at("14:25").do(daily_job)   #"08:30"
 
     while True:
         schedule.run_pending()

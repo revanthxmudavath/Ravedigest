@@ -64,7 +64,7 @@ def readiness_check():
 def get_notion_worker_status():
     """Check if the notion worker has processed all digests."""
     redis_client = get_redis_client("notion_worker_status")
-    stream_name = "digests"
+    stream_name = "digest_stream"
     group_name = f"{settings.service.consumer_group_prefix}-notion"
 
     try:
