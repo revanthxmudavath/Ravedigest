@@ -5,14 +5,17 @@ Provides comprehensive health monitoring and status reporting.
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional, Callable, List
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from dataclasses import dataclass
-from shared.config.settings import get_settings
-from shared.app_logging.logger import get_logger
-from shared.utils.redis_client import get_redis_client
+from typing import Any, Callable, Dict, List, Optional
+
 from sqlalchemy import text
+
+from shared.app_logging.logger import get_logger
+from shared.config.settings import get_settings
+from shared.utils.redis_client import get_redis_client
+
 logger = get_logger(__name__)
 
 

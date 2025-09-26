@@ -1,6 +1,6 @@
 #services.notion_worker.app.markdown_parser.py
-import re 
-import logging 
+import logging
+import re
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

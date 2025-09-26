@@ -1,7 +1,8 @@
 from openai import OpenAI
 from rouge_score import rouge_scorer
-from shared.config.settings import get_settings
+
 from shared.app_logging.logger import get_logger
+from shared.config.settings import get_settings
 from shared.utils.retry import retry
 
 logger = get_logger("analyzer.summarize")

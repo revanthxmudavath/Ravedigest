@@ -1,15 +1,17 @@
 """Basic tests for analyzer service."""
-import pytest
-from unittest.mock import Mock, patch
-import sys
 import os
+import sys
+from unittest.mock import Mock, patch
+
+import pytest
+
 
 def test_analyzer_imports():
     """Test that analyzer modules can be imported."""
     try:
+        from services.analyzer.filter import mark_developer_focus
         from services.analyzer.main import app
         from services.analyzer.summarize import summarize_articles
-        from services.analyzer.filter import mark_developer_focus
         assert True
     except ImportError as e:
         pytest.fail(f"Import failed: {e}")

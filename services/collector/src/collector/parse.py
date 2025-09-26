@@ -1,12 +1,12 @@
-import feedparser
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 from typing import List, Optional
 from uuid import uuid4
 
+import feedparser
 from collector.article import Article
-from shared.app_logging.logger import get_logger
 
-from email.utils import parsedate_to_datetime
+from shared.app_logging.logger import get_logger
 
 logger = get_logger("collector.parse")
 

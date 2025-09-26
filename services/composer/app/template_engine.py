@@ -1,8 +1,9 @@
-import os 
-import logging 
-from jinja2 import Environment, FileSystemLoader, select_autoescape, Template
-import time 
+import logging
+import os
 import re
+import time
+
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

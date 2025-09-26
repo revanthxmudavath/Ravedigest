@@ -1,9 +1,9 @@
 # services/analyzer/app/crud.py
 
-from shared.database.session import SessionLocal
-from shared.database.models.article import Article
-from shared.schemas.messages import EnrichedArticle
 from shared.app_logging.logger import get_logger
+from shared.database.models.article import Article
+from shared.database.session import SessionLocal
+from shared.schemas.messages import EnrichedArticle
 from shared.utils.retry import retry
 
 logger = get_logger("analyzer.crud")

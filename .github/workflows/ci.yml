@@ -33,6 +33,7 @@ jobs:
       # Other settings
       LOCAL_DEV: true
       LOG_LEVEL: DEBUG
+      PYTHONPATH: ${{ github.workspace }}/services/collector/src:${{ github.workspace }}/services/analyzer:${{ github.workspace }}/services/composer/app:${{ github.workspace }}/services/notion_worker/app:${{ github.workspace }}/services/scheduler/src:${{ github.workspace }}/shared
 
     services:
       postgres:
@@ -167,8 +168,8 @@ jobs:
 
     - name: Run security scan with bandit
       run: |
-        bandit -r services/ shared/ -f json -o bandit-report.json || true
-        bandit -r services/ shared/
+        bandit -r services/ shared/ -f json -o bandit-report.json -c bandit.yaml
+        bandit -r services/ shared/ -c bandit.yaml
 
     - name: Check dependencies for known security vulnerabilities
       run: |

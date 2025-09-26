@@ -1,8 +1,9 @@
-from shared.database.session import SessionLocal
-from shared.database.models.article import Article
-from shared.app_logging.logger import get_logger
-from shared.utils.retry import retry
 from sqlalchemy.exc import IntegrityError
+
+from shared.app_logging.logger import get_logger
+from shared.database.models.article import Article
+from shared.database.session import SessionLocal
+from shared.utils.retry import retry
 
 logger = get_logger("collector.db")
 

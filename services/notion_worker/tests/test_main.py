@@ -1,8 +1,10 @@
 """Basic tests for notion worker service."""
-import pytest
-from unittest.mock import Mock, patch
-import sys
 import os
+import sys
+from unittest.mock import Mock, patch
+
+import pytest
+
 
 def test_notion_worker_imports():
     """Test that notion worker modules can be imported."""

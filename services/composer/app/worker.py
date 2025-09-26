@@ -1,11 +1,13 @@
 # services/composer/app/worker.py
 
 import asyncio
+
+from services.composer.app.digest_utils import (generate_and_publish_digest,
+                                                get_db)
+from shared.app_logging.logger import get_logger
+from shared.config.settings import get_settings
 from shared.schemas.messages import EnrichedArticle
 from shared.utils.redis_client import get_redis_client
-from shared.config.settings import get_settings
-from shared.app_logging.logger import get_logger
-from services.composer.app.digest_utils import get_db, generate_and_publish_digest
 
 logger = get_logger("composer.worker")
 settings = get_settings()

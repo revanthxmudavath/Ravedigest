@@ -1,8 +1,10 @@
 #services.notion_worker.app.notion_client.py
 import os
+
 from notion_client import Client
-from shared.schemas.messages import DigestReady
+
 from services.notion_worker.app.markdown_parser import markdown_to_blocks
+from shared.schemas.messages import DigestReady
 
 notion = Client(auth=os.getenv("NOTION_API_KEY"))
 DATABASE_ID = os.getenv("NOTION_DB_ID")

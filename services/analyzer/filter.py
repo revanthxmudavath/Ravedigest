@@ -1,7 +1,8 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from shared.config.settings import get_settings
+
 from shared.app_logging.logger import get_logger
+from shared.config.settings import get_settings
 
 logger = get_logger("analyzer.filter")
 

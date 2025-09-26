@@ -3,12 +3,14 @@ Standardized Redis client utilities for RaveDigest services.
 Provides connection pooling, retry logic, and consistent error handling.
 """
 
-import redis
 import logging
-from typing import Optional, Any, Dict, List, Tuple
 from contextlib import asynccontextmanager
-from shared.config.settings import get_settings
+from typing import Any, Dict, List, Optional, Tuple
+
+import redis
+
 from shared.app_logging.logger import get_logger
+from shared.config.settings import get_settings
 
 logger = get_logger(__name__)
 

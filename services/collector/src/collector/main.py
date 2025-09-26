@@ -1,14 +1,16 @@
 #services/collector/src/collector/main.py
+from uuid import UUID
+
+from collector import parse
 from collector.article import Article
 from collector.db import save_articles_to_db
 from collector.utils import is_duplicate, mark_seen, publish_raw
-from shared.database.session import init_db
-from shared.config.settings import get_settings
-from shared.app_logging.logger import setup_logging, get_logger
-from shared.utils.health import create_collector_health_checker
-from uuid import UUID
 from fastapi import FastAPI, HTTPException
-from collector import parse 
+
+from shared.app_logging.logger import get_logger, setup_logging
+from shared.config.settings import get_settings
+from shared.database.session import init_db
+from shared.utils.health import create_collector_health_checker
 
 # Setup logging
 logger = setup_logging("collector")

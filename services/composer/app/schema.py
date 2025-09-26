@@ -1,5 +1,6 @@
-import logging 
+import logging
 from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

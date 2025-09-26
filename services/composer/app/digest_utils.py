@@ -1,11 +1,12 @@
 # digest_utils.py
 import uuid
-from services.composer.app.crud import get_top_articles, create_digest
+
+from services.composer.app.crud import create_digest, get_top_articles
 from services.composer.app.redis_client import publish_digest_ready
 from services.composer.app.template_engine import render, validate_markdown
-from shared.database.session import SessionLocal
-from shared.config.settings import get_settings
 from shared.app_logging.logger import get_logger
+from shared.config.settings import get_settings
+from shared.database.session import SessionLocal
 
 logger = get_logger("composer.digest_utils")
 settings = get_settings()
