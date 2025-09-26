@@ -13,7 +13,8 @@ def test_notion_worker_imports():
     except ImportError as e:
         pytest.fail(f"Import failed: {e}")
 
-def test_app_creation():
+@patch('services.notion_worker.app.worker.consume_digest_stream')
+def test_app_creation(mock_consume):
     """Test that FastAPI app can be created."""
     from services.notion_worker.app.main import app
     assert app is not None

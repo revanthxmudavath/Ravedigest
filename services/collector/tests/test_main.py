@@ -3,6 +3,8 @@ import pytest
 from unittest.mock import Mock, patch
 import sys
 import os
+from datetime import datetime
+from uuid import uuid4
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -29,11 +31,13 @@ def test_article_class():
     from collector.article import Article
 
     article = Article(
+        id=uuid4(),
         title="Test Article",
         url="https://example.com",
-        published="2024-01-01T00:00:00Z",
+        published_at=datetime(2024, 1, 1),
         source="Test Source",
-        summary="Test summary"
+        summary="Test summary",
+        categories=["tech"]
     )
 
     assert article.title == "Test Article"

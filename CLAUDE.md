@@ -18,13 +18,35 @@ make format       # Format Python code with black (services/ and shared/)
 
 ### Testing
 ```bash
-# Collector service tests
+# Service-specific testing with correct PYTHONPATH for each service structure
+
+# Collector service (src/collector structure)
 cd services/collector
 pip install -r requirements.txt pytest
-PYTHONPATH=. pytest tests
+PYTHONPATH=src:../.. pytest tests -v
 
-# Other services follow similar patterns with pytest.ini configurations
-# Each service has its own requirements.txt and test configuration
+# Analyzer service (root level structure)
+cd services/analyzer
+pip install -r requirements.txt pytest
+PYTHONPATH=.:../.. pytest tests -v
+
+# Composer service (app/ structure)
+cd services/composer
+pip install -r requirements.txt pytest
+PYTHONPATH=.:../.. pytest tests -v
+
+# Notion Worker service (app/ structure)
+cd services/notion_worker
+pip install -r requirements.txt pytest
+PYTHONPATH=.:../.. pytest tests -v
+
+# Scheduler service (src/ structure)
+cd services/scheduler
+pip install -r requirements.txt pytest
+PYTHONPATH=.:../.. pytest tests -v
+
+# Run all tests via CI workflow
+# The GitHub Actions CI automatically handles all dependencies and paths
 ```
 
 ## Architecture Overview
@@ -106,11 +128,33 @@ RaveDigest is a microservices architecture that collects trending content, analy
 
 **Testing Configuration**
 - Each service uses pytest with custom pytest.ini configuration
-- Python path adjustments needed for imports: `PYTHONPATH=. pytest`
+- Service-specific PYTHONPATH requirements due to different directory structures:
+  - Collector: `PYTHONPATH=src:../..` (src/collector structure)
+  - Others: `PYTHONPATH=.:../..` (root or app structures)
+- All tests run in CI/CD with automatic dependency management
 - Service-specific test directories under each service folder
 
 **Environment Setup**
-- Services expect `.env` file in project root
+- Services expect `.env` file in project root (use `.env.example` as template)
 - Database runs on port 8586 (mapped from container port 5432)
 - Redis runs on standard port 6379
 - Each service runs on ports 8001-8005
+
+### CI/CD & Security
+
+**GitHub Actions Workflow**
+- Automated testing for all services with proper dependency management
+- Code formatting checks with black, isort, and flake8
+- Security scanning with bandit and safety
+- Environment variables managed via GitHub Secrets for security
+
+**Security Features**
+- `.env.example` template for safe environment variable setup
+- GitHub Secrets integration for sensitive API keys
+- Comprehensive `.gitignore` to prevent accidental secret commits
+- Security documentation in `SECURITY.md`
+
+**Branch Protection**
+- CI must pass before merging to main
+- Automated testing on push and pull requests
+- Docker build validation

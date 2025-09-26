@@ -22,8 +22,9 @@ def parse_timestamp(source: str, ts_raw: str) -> datetime:
     try:
         dt = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
         return dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
-    except Exception:
-        pass
+    except ValueError as e:
+        logger.warning(f"Failed to parse ISO date: {e}")
+        return None
 
     # RFC: e.g. “Wed, 16 Jul 2025 20:54:01 +0000”
     try:

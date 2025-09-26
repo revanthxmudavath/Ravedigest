@@ -14,7 +14,8 @@ def test_analyzer_imports():
     except ImportError as e:
         pytest.fail(f"Import failed: {e}")
 
-def test_app_creation():
+@patch('services.analyzer.main.init_db')
+def test_app_creation(mock_init_db):
     """Test that FastAPI app can be created."""
     from services.analyzer.main import app
     assert app is not None
