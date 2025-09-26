@@ -1,11 +1,13 @@
 #services/notion_worker/app/main.py
-from fastapi import FastAPI, HTTPException
 import asyncio
-import redis
 from contextlib import asynccontextmanager, suppress
+
+import redis
+from fastapi import FastAPI, HTTPException
+
 from services.notion_worker.app.worker import consume_digest_stream
+from shared.app_logging.logger import get_logger, setup_logging
 from shared.config.settings import get_settings
-from shared.app_logging.logger import setup_logging, get_logger
 from shared.utils.health import create_notion_health_checker
 from shared.utils.redis_client import get_redis_client
 

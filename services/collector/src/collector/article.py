@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
 from uuid import UUID
+
+from pydantic import BaseModel
+
 
 class Article(BaseModel):
     id: UUID

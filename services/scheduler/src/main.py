@@ -1,11 +1,13 @@
-import schedule
-import time
-import requests
 import os
+import time
 from threading import Thread
-from fastapi import FastAPI
+
+import requests
+import schedule
 import uvicorn
-from tenacity import retry, stop_after_attempt, wait_fixed, RetryError
+from fastapi import FastAPI
+from tenacity import RetryError, retry, stop_after_attempt, wait_fixed
+
 from shared.app_logging.logger import setup_logging
 
 # Setup logging

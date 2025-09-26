@@ -3,12 +3,13 @@ Standardized logging utilities for RaveDigest services.
 Provides structured logging with correlation IDs and consistent formatting.
 """
 
-import logging
 import json
+import logging
 import uuid
-from typing import Optional, Dict, Any
 from contextvars import ContextVar
 from datetime import datetime
+from typing import Any, Dict, Optional
+
 from shared.config.settings import get_settings
 
 # Context variable for correlation ID

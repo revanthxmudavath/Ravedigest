@@ -1,22 +1,24 @@
 #services/analyzer/main.py
-from fastapi import FastAPI, Response, HTTPException
+import asyncio
+import os
+
+import httpx
+import redis
+from bs4 import BeautifulSoup
+from fastapi import FastAPI, HTTPException, Response
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
+from readability import Document
+
+from services.analyzer.crud import save_enriched_to_db
+from services.analyzer.filter import mark_developer_focus
+from services.analyzer.summarize import summarize_articles
+from shared.app_logging.logger import get_logger, setup_logging
+from shared.config.settings import get_settings
 from shared.database.session import init_db
 from shared.schemas.messages import EnrichedArticle, RawArticle
-from shared.config.settings import get_settings
-from shared.app_logging.logger import setup_logging, get_logger
 from shared.utils.health import create_analyzer_health_checker
 from shared.utils.redis_client import get_redis_client
 from shared.utils.retry import async_retry
-import asyncio 
-import os
-import redis
-from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
-from services.analyzer.crud import save_enriched_to_db
-from services.analyzer.summarize import summarize_articles
-from services.analyzer.filter import mark_developer_focus
-import httpx
-from readability import Document
-from bs4 import BeautifulSoup
 
 # Setup logging
 logger = setup_logging("analyzer")

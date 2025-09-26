@@ -1,13 +1,15 @@
-from fastapi import FastAPI, Depends, HTTPException, Response
-from contextlib import asynccontextmanager, suppress
-from fastapi import status
 import asyncio
-from shared.config.settings import get_settings
-from shared.app_logging.logger import setup_logging, get_logger
-from shared.utils.health import create_composer_health_checker
-from shared.database.session import init_db
-from services.composer.app.digest_utils import generate_and_publish_digest, get_db
+from contextlib import asynccontextmanager, suppress
+
+from fastapi import Depends, FastAPI, HTTPException, Response, status
+
+from services.composer.app.digest_utils import (generate_and_publish_digest,
+                                                get_db)
 from services.composer.app.schema import DigestOut
+from shared.app_logging.logger import get_logger, setup_logging
+from shared.config.settings import get_settings
+from shared.database.session import init_db
+from shared.utils.health import create_composer_health_checker
 
 # Setup logging
 logger = setup_logging("composer")

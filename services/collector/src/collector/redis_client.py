@@ -1,5 +1,7 @@
-from redis import Redis 
-import os 
+import os
+
+from redis import Redis
+
 
 def get_redis_client() -> Redis:
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")

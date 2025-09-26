@@ -1,16 +1,15 @@
+import os
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import create_engine, pool
-import sys
-import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from shared.database.base import Base
+from alembic import context
 
 import shared.database.models.article
+from shared.database.base import Base
 from shared.database.models.digest import Digest
-
-from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

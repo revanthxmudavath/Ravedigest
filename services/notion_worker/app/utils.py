@@ -1,9 +1,10 @@
 #services.notion_worker.app.utils.py
-import time 
-import logging 
-from typing import Callable, Type 
-from requests.exceptions import RequestException
+import logging
+import time
+from typing import Callable, Type
+
 from httpx import HTTPStatusError
+from requests.exceptions import RequestException
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

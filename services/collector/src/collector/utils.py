@@ -1,11 +1,12 @@
 #services/collector/src/collector/utils.py
 import logging
+
+from shared.app_logging.logger import get_logger
+from shared.config.settings import get_settings
 from shared.database.models.article import Article
 from shared.schemas.messages import RawArticle
 from shared.utils.redis_client import get_redis_client
-from shared.app_logging.logger import get_logger
 from shared.utils.retry import retry
-from shared.config.settings import get_settings
 
 logger = get_logger("collector.utils")
 settings = get_settings()

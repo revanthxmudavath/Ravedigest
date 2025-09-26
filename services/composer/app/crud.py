@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
+
+from shared.app_logging.logger import get_logger
 from shared.database.models.article import Article
 from shared.database.models.digest import Digest
-from shared.app_logging.logger import get_logger
 from shared.utils.retry import retry
 
 logger = get_logger("composer.crud")

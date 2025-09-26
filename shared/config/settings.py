@@ -3,9 +3,9 @@ Centralized configuration management for RaveDigest services.
 Uses Pydantic Settings for validation and type safety.
 """
 
+import re
 from functools import lru_cache
 from typing import List, Optional
-import re
 from urllib.parse import urlparse
 
 from pydantic import AliasChoices, Field, validator

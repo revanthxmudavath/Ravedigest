@@ -1,11 +1,14 @@
+import logging
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from shared.app_logging.logger import get_logger
+from shared.config.settings import get_settings
+
 from .base import Base
 from .models.article import Article
 from .models.digest import Digest
-from shared.config.settings import get_settings
-from shared.app_logging.logger import get_logger
-import logging
 
 logger = get_logger("database")
 

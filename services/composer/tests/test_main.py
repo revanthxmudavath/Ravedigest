@@ -1,14 +1,17 @@
 """Basic tests for composer service."""
-import pytest
-from unittest.mock import Mock, patch
-import sys
 import os
+import sys
+from unittest.mock import Mock, patch
+
+import pytest
+
 
 def test_composer_imports():
     """Test that composer modules can be imported."""
     try:
+        from services.composer.app.digest_utils import \
+            generate_and_publish_digest
         from services.composer.app.main import app
-        from services.composer.app.digest_utils import generate_and_publish_digest
         assert True
     except ImportError as e:
         pytest.fail(f"Import failed: {e}")

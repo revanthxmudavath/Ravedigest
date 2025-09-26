@@ -1,23 +1,27 @@
 """Basic tests for collector service."""
-import pytest
-from unittest.mock import Mock, patch
-import sys
+
 import os
+import sys
 from datetime import datetime
+from unittest.mock import Mock, patch
 from uuid import uuid4
+
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+
 def test_collector_imports():
     """Test that collector modules can be imported."""
     try:
-        import collector.main
         import collector.article
+        import collector.main
         import collector.utils
         assert True
     except ImportError as e:
         pytest.fail(f"Import failed: {e}")
+
 
 @patch('collector.main.init_db')
 def test_app_creation(mock_init_db):
@@ -25,6 +29,7 @@ def test_app_creation(mock_init_db):
     from collector.main import app
     assert app is not None
     assert app.title == "RaveDigest Collector Service"
+
 
 def test_article_class():
     """Test Article class basic functionality."""

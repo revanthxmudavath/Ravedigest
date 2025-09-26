@@ -1,15 +1,17 @@
 #services.notion_worker.app.worker.py
 import asyncio
+
 import redis
-from shared.schemas.messages import DigestReady
-from shared.database.session import SessionLocal
-from shared.database.models.digest import Digest
-from services.notion_worker.app.notion_client import notion, DATABASE_ID
+
 from services.notion_worker.app.markdown_parser import markdown_to_blocks
+from services.notion_worker.app.notion_client import (DATABASE_ID, notion,
+                                                      publish_to_notion)
 from services.notion_worker.app.utils import retry_with_backoff
-from services.notion_worker.app.notion_client import publish_to_notion
-from shared.config.settings import get_settings
 from shared.app_logging.logger import get_logger
+from shared.config.settings import get_settings
+from shared.database.models.digest import Digest
+from shared.database.session import SessionLocal
+from shared.schemas.messages import DigestReady
 from shared.utils.redis_client import get_redis_client
 
 logger = get_logger("notion.worker")

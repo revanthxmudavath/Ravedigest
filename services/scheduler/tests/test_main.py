@@ -1,8 +1,10 @@
 """Basic tests for scheduler service."""
-import pytest
-from unittest.mock import Mock, patch
-import sys
 import os
+import sys
+from unittest.mock import Mock, patch
+
+import pytest
+
 
 def test_scheduler_imports():
     """Test that scheduler modules can be imported."""
