@@ -1,6 +1,5 @@
 # RaveDigest – AI-Powered Content Digest Platform
 
-[![CI](https://github.com/Skateslavasker/Ravedigest/actions/workflows/ci.yml/badge.svg)](https://github.com/Skateslavasker/Ravedigest/actions/workflows/ci.yml)
 [![Docker](https://github.com/Skateslavasker/Ravedigest/actions/workflows/docker.yml/badge.svg)](https://github.com/Skateslavasker/Ravedigest/actions/workflows/docker.yml)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
