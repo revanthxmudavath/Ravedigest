@@ -58,13 +58,15 @@ graph LR
 2. **Configure environment variables:**
    ```bash
    cp .env.example .env
-   # Edit .env with your API keys and configuration
+   # Edit .env with your actual API keys and configuration
+   # NEVER commit the .env file - it's protected by .gitignore
    ```
 
 3. **Required API Keys:**
    - **OpenAI API Key**: For content analysis and summarization
    - **Notion API Key**: For publishing digests
    - **Notion Database ID**: Target database for digest publishing
+   - **See SECURITY.md** for detailed setup instructions and best practices
 
 ### Deployment Options
 
@@ -235,6 +237,34 @@ RSS Feeds → Raw Articles → Content Extraction → AI Analysis → Digest Gen
 
 ## 🛠️ Development
 
+### CI/CD Pipeline
+
+RaveDigest includes a comprehensive CI/CD pipeline with GitHub Actions:
+
+#### Automated Testing
+- **Multi-service testing** with proper dependency management
+- **Service-specific PYTHONPATH** configuration for different directory structures
+- **Shared module validation** to ensure cross-service compatibility
+- **Parallel test execution** for faster feedback
+
+#### Code Quality
+- **Code formatting** with Black (PEP 8 compliance)
+- **Import sorting** with isort
+- **Linting** with flake8 for code quality
+- **Type checking** support for better code reliability
+
+#### Security Scanning
+- **Dependency vulnerabilities** with safety
+- **Security issues** with bandit static analysis
+- **Secret detection** to prevent credential leaks
+- **Automated security updates** via Dependabot
+
+#### Environment Management
+- **GitHub Secrets** for secure API key management
+- **Environment templates** with `.env.example`
+- **Test environment isolation** with mock services
+- **Production-ready deployment** configurations
+
 ### Local Development Setup
 
 1. **Install dependencies:**
@@ -257,20 +287,34 @@ RSS Feeds → Raw Articles → Content Extraction → AI Analysis → Digest Gen
 
 ### Testing
 
-Each service includes comprehensive test suites:
+Each service includes comprehensive test suites with service-specific configurations:
 
 ```bash
-# Collector service tests
-cd services/collector
-pip install -r requirements.txt pytest
-PYTHONPATH=. pytest tests
+# Install all dependencies first (recommended)
+pip install -r services/collector/requirements.txt
+pip install -r services/analyzer/requirements.txt
+pip install -r services/composer/requirements.txt
+pip install -r services/notion_worker/requirements.txt
+pip install -r services/scheduler/requirements.txt
 
-# Analyzer service tests
-cd services/analyzer
-PYTHONPATH=. pytest tests
+# Service-specific testing (note different PYTHONPATH requirements)
+# Collector service (src/collector structure)
+cd services/collector && PYTHONPATH=src:../.. pytest tests -v
 
-# Run all tests
-find services -name "pytest.ini" -execdir pytest \;
+# Analyzer service (root structure)
+cd services/analyzer && PYTHONPATH=.:../.. pytest tests -v
+
+# Composer service (app/ structure)
+cd services/composer && PYTHONPATH=.:../.. pytest tests -v
+
+# Notion Worker service (app/ structure)
+cd services/notion_worker && PYTHONPATH=.:../.. pytest tests -v
+
+# Scheduler service (src/ structure)
+cd services/scheduler && PYTHONPATH=.:../.. pytest tests -v
+
+# Run via GitHub Actions CI (recommended)
+# Push to trigger automated testing with proper environment
 ```
 
 ### Database Migrations
@@ -402,11 +446,14 @@ Services are designed for horizontal scaling:
 
 ### Security Features
 
-- **Environment-based secrets management**
-- **Input validation** with Pydantic models
+- **Environment-based secrets management** with `.env.example` template
+- **GitHub Secrets integration** for CI/CD and production deployments
+- **Input validation** with Pydantic models and type safety
 - **SQL injection protection** via SQLAlchemy ORM
 - **Rate limiting** capabilities (configurable)
 - **Health check authentication** (optional)
+- **Automated security scanning** with bandit and safety in CI
+- **Dependency vulnerability monitoring** via GitHub Dependabot
 
 ## 🚨 Troubleshooting
 
@@ -477,12 +524,14 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Make** your changes with tests
-4. **Run** the test suite (`make test`)
-5. **Format** code (`make format`)
+3. **Make** your changes with appropriate tests
+4. **Run** the test suite locally (see Testing section above)
+5. **Format** code (`make format` or use CI formatting)
 6. **Commit** changes (`git commit -m 'Add amazing feature'`)
 7. **Push** to branch (`git push origin feature/amazing-feature`)
-8. **Create** a Pull Request
+8. **Create** a Pull Request (CI will automatically run all checks)
+
+**Note**: All pull requests must pass the CI pipeline (tests, linting, security scans) before merging.
 
 ### Code Standards
 

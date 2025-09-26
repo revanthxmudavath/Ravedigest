@@ -5,7 +5,7 @@ on:
     branches: [ "main"]
   pull_request:
     branches: [ "main" ]
-  
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -79,40 +79,40 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pytest pytest-asyncio fakeredis
+        # Install all requirements to ensure shared dependencies are available
+        pip install -r services/collector/requirements.txt
+        pip install -r services/analyzer/requirements.txt
+        pip install -r services/composer/requirements.txt
+        pip install -r services/notion_worker/requirements.txt
+        pip install -r services/scheduler/requirements.txt
 
     - name: Test Collector service
       run: |
         cd services/collector
-        pip install -r requirements.txt
         PYTHONPATH=src:../.. pytest tests/ -v
 
     - name: Test Analyzer service
       run: |
         cd services/analyzer
-        pip install -r requirements.txt
-        PYTHONPATH=../:../.. pytest tests/ -v
+        PYTHONPATH=.:../.. pytest tests/ -v
 
     - name: Test Composer service
       run: |
         cd services/composer
-        pip install -r requirements.txt
-        PYTHONPATH=../:../.. pytest tests/ -v
+        PYTHONPATH=.:../.. pytest tests/ -v
 
     - name: Test Notion Worker service
       run: |
         cd services/notion_worker
-        pip install -r requirements.txt
-        PYTHONPATH=../:../.. pytest tests/ -v
+        PYTHONPATH=.:../.. pytest tests/ -v
 
     - name: Test Scheduler service
       run: |
         cd services/scheduler
-        pip install -r requirements.txt
-        PYTHONPATH=../:../.. pytest tests/ -v
+        PYTHONPATH=.:../.. pytest tests/ -v
 
     - name: Test shared modules
       run: |
-        pip install -r services/collector/requirements.txt  # Install dependencies for shared modules
         python -c "from shared.config.settings import get_settings; print('Shared modules import successfully')"
         python -c "from shared.database.models.article import Article; print('Database models import successfully')"
         python -c "from shared.schemas.messages import RawArticle; print('Schemas import successfully')"
@@ -132,6 +132,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install black isort flake8
+
+    - name: Formatting with black
+      run: |
+        black .
 
     - name: Check code formatting with black
       run: |

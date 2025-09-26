@@ -33,9 +33,9 @@ class RedisClient:
         if hasattr(value, "isoformat"):
             try:
                 return value.isoformat()
-            except Exception:
-                pass
-        return str(value)
+            except AttributeError as e:
+                self._logger.warning(f"Value has no isoformat(): {e}")
+            return str(value)
 
     def _get_client(self) -> redis.Redis:
         """Get or create Redis client with connection pooling."""
