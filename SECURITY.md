@@ -81,10 +81,13 @@ environment:
 
 ## 🔍 Security Scanning
 
-The CI workflow includes:
-- **Bandit**: Python security linting
-- **Safety**: Dependency vulnerability scanning
-- **GitHub Dependabot**: Automated dependency updates
+The CI workflow includes comprehensive security checks:
+- **Bandit**: Python security linting for common vulnerabilities
+- **Safety**: Dependency vulnerability scanning with known CVE database
+- **GitHub Dependabot**: Automated dependency updates for security patches
+- **Trivy**: Container image vulnerability scanning in CI/CD
+- **Docker image security**: Best practices validation with hadolint
+- **Secret detection**: Prevents accidental commit of sensitive data
 
 ## 📊 Monitoring & Alerts
 
@@ -112,6 +115,15 @@ The CI workflow includes:
 2. **Rotate all API keys** mentioned in code/commits
 3. **Review commit history** for sensitive data
 4. **Clean up git history** if needed (consider new repo)
+5. **Check GitHub Actions logs** for any exposed secrets
+6. **Review all Docker image builds** for embedded secrets
+
+### Recent Security Improvements ✅
+- **Fixed hardcoded API keys** in CI workflows (now use GitHub Secrets)
+- **Added comprehensive .gitignore** patterns for all environment files
+- **Implemented secret masking** in CI/CD pipeline logs
+- **Enhanced dependency management** with automated security updates
+- **Added container security scanning** with Trivy in GitHub Actions
 
 ## 📞 Security Contacts
 

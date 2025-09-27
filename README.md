@@ -30,13 +30,13 @@ graph LR
 
 ### Services Architecture
 
-| Service | Port | Purpose | Key Technologies |
-|---------|------|---------|------------------|
-| **Collector** | 8001 | RSS feed collection & deduplication | FastAPI, BeautifulSoup, Redis |
-| **Analyzer** | 8002 | Content extraction & AI analysis | OpenAI GPT, Prometheus, Scikit-learn |
-| **Composer** | 8003 | Digest generation & formatting | Jinja2, FastAPI |
-| **Notion Worker** | 8004 | Notion database publishing | Notion API, Markdown parsing |
-| **Scheduler** | 8005 | Workflow orchestration & automation | Schedule, Tenacity |
+| Service | Port | Purpose | Key Technologies | Recent Fixes |
+|---------|------|---------|------------------|--------------|
+| **Collector** | 8001 | RSS feed collection & deduplication | FastAPI, BeautifulSoup, Redis | ✅ Fixed NoneType errors, UUID serialization |
+| **Analyzer** | 8002 | Content extraction & AI analysis | OpenAI GPT, Prometheus, Scikit-learn | ✅ Health checks, dependency updates |
+| **Composer** | 8003 | Digest generation & formatting | Jinja2, FastAPI | ✅ Docker health checks with curl |
+| **Notion Worker** | 8004 | Notion database publishing | Notion API, Markdown parsing | ✅ Fixed text length validation (2000 char limit) |
+| **Scheduler** | 8005 | Workflow orchestration & automation | Schedule, Tenacity | ✅ Fixed dependency naming, environment config |
 
 ## 🚀 Quick Start
 
@@ -196,11 +196,11 @@ GET /notion/status
 
 The Scheduler service orchestrates a fully automated daily workflow:
 
-1. **08:30 AM**: Trigger RSS collection
-2. **Wait**: For analyzer to process all articles
+1. **03:50 AM**: Trigger RSS collection (configurable via `SCHEDULER_DAILY_TIME`)
+2. **Wait**: For analyzer to process all articles with status monitoring
 3. **Auto-trigger**: Composer service for digest generation
-4. **Wait**: For Notion Worker to publish digest
-5. **Complete**: Workflow with full observability
+4. **Wait**: For Notion Worker to publish digest with retry logic
+5. **Complete**: Workflow with full observability and error handling
 
 ### Data Processing Pipeline
 
@@ -455,6 +455,15 @@ Services are designed for horizontal scaling:
 - **Dependency vulnerability monitoring** via GitHub Dependabot
 
 ## 🚨 Troubleshooting
+
+### Recent Fixes & Known Issues ✅
+
+#### Recently Fixed Issues
+- **NoneType Redis errors**: Fixed UUID serialization in collector service (`shared/utils/redis_client.py`)
+- **Notion API validation**: Fixed 2000 character limit in text blocks (`services/notion_worker/app/markdown_parser.py`)
+- **Docker health checks**: Added curl installation for health check commands in all Dockerfiles
+- **Dependency conflicts**: Fixed pydantic-settings naming inconsistency in scheduler service
+- **Database initialization**: Fixed table creation with `checkfirst=True` parameter
 
 ### Common Issues
 

@@ -81,10 +81,11 @@ RaveDigest is a microservices architecture that collects trending content, analy
 - Handles markdown parsing and Notion block creation
 
 **Scheduler Service** (Port 8005)
-- Orchestrates daily workflow execution
+- Orchestrates daily workflow execution at configurable time (default 03:50 AM)
 - Triggers collector → waits for analyzer idle → triggers composer → waits for notion worker idle
 - Uses tenacity retry patterns for service communication
 - Configurable timing and retry behavior via environment variables
+- Entry point: `services/scheduler/src/main.py`
 
 ### Key Architecture Patterns
 
@@ -158,3 +159,98 @@ RaveDigest is a microservices architecture that collects trending content, analy
 - CI must pass before merging to main
 - Automated testing on push and pull requests
 - Docker build validation
+
+## Recent Critical Fixes & Known Issues ✅
+
+### Fixed Issues (Priority Fixes)
+
+1. **NoneType Redis Serialization Error** ✅ FIXED
+   - **Location**: `shared/utils/redis_client.py:_serialize_value()`
+   - **Issue**: UUID objects not properly serialized for Redis streams
+   - **Fix**: Added UUID handling with `hasattr(value, "hex")` check
+   - **Impact**: Prevents collector service crashes during article publishing
+
+2. **Notion API Text Length Validation Error** ✅ FIXED
+   - **Location**: `services/notion_worker/app/markdown_parser.py`
+   - **Issue**: Text blocks exceeding 2000 character limit causing API rejection
+   - **Fix**: Added `truncate_text()` function with smart word-boundary breaking
+   - **Impact**: Ensures successful digest publishing to Notion
+
+3. **Docker Health Check Failures** ✅ FIXED
+   - **Location**: All service Dockerfiles (analyzer, composer, notion_worker)
+   - **Issue**: Health checks using `curl` but `curl` not installed in slim images
+   - **Fix**: Added `RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*`
+   - **Impact**: Proper container health monitoring in production
+
+4. **Dependency Naming Inconsistency** ✅ FIXED
+   - **Location**: `services/scheduler/requirements.txt`
+   - **Issue**: Used `pydantic_settings` while others use `pydantic-settings`
+   - **Fix**: Standardized to `pydantic-settings` across all services
+   - **Impact**: Prevents CI/CD installation conflicts
+
+5. **Database Initialization Errors** ✅ FIXED
+   - **Location**: `shared/database/session.py:init_db()`
+   - **Issue**: `create_all()` failing when tables already exist
+   - **Fix**: Added `checkfirst=True` parameter to `create_all()`
+   - **Impact**: Prevents service startup failures on restart
+
+### Development Best Practices
+
+**Error Handling Patterns**
+- Always use `@retry` decorators for external service calls
+- Implement proper exception handling with specific error types
+- Log errors with sufficient context for debugging
+- Use circuit breaker patterns for cascading failure prevention
+
+**Redis Stream Patterns**
+- Ensure all message fields are serializable (strings, numbers, booleans)
+- Use `exclude_none=True` in Pydantic model dumps
+- Handle UUID and datetime objects explicitly in serialization
+- Implement proper consumer group management and acknowledgment
+
+**Notion API Integration**
+- Validate all text content length (2000 char max per text block)
+- Implement smart truncation with word boundaries
+- Use retry patterns for API rate limiting
+- Handle API validation errors gracefully
+
+**Docker Best Practices**
+- Install required tools (curl, etc.) for health checks
+- Use multi-stage builds for production images
+- Implement proper health check commands
+- Handle container startup dependencies correctly
+
+**Testing Patterns**
+- Use service-specific PYTHONPATH configurations
+- Test with proper dependency isolation
+- Mock external service dependencies
+- Validate error handling scenarios
+
+### Debugging Common Issues
+
+**NoneType Errors in Redis**
+```python
+# Check for None values before Redis operations
+if value is None:
+    return ""  # or appropriate default
+```
+
+**Text Length Issues with Notion**
+```python
+# Truncate text content before API calls
+content = truncate_text(original_text, max_length=2000)
+```
+
+**Container Health Check Failures**
+```bash
+# Verify curl is available in container
+docker exec -it service_name curl --version
+```
+
+**Service Communication Failures**
+```bash
+# Check service discovery
+docker-compose exec service1 nslookup service2
+# Test internal connectivity
+docker-compose exec service1 curl http://service2:port/health
+```
