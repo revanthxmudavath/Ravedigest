@@ -42,15 +42,28 @@ async def consume_enriched():
                         try:
                             # Validate message schema
                             EnrichedArticle(**payload)
-                            
-                            # Generate digest
-                            with next(get_db()) as db:
-                                logger.info("📩 Received enriched article %s; composing digest", msg_id)
-                                generate_and_publish_digest(db)
 
-                            # Acknowledge message
-                            redis_client.xack(stream, group, msg_id)
-                            logger.info("✅ Acknowledged %s", msg_id)
+                            # Generate digest with proper session management
+                            db_gen = get_db()
+                            db = next(db_gen)
+                            try:
+                                logger.info("📩 Received enriched article %s; composing digest", msg_id)
+                                digest_result = generate_and_publish_digest(db)
+
+                                # Only acknowledge if digest generation succeeded
+                                if digest_result is not None:
+                                    redis_client.xack(stream, group, msg_id)
+                                    logger.info("✅ Acknowledged %s", msg_id)
+                                else:
+                                    logger.info("⏭️ No digest generated for %s (no articles available)", msg_id)
+                                    redis_client.xack(stream, group, msg_id)  # Still acknowledge as this isn't an error
+
+                            except Exception:
+                                # Ensure session cleanup on error
+                                db.rollback()
+                                raise
+                            finally:
+                                db.close()
 
                         except Exception as e:
                             logger.exception("❌ Failed processing %s: %s", msg_id, e)

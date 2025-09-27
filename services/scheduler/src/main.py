@@ -19,6 +19,9 @@ COMPOSER_URL = os.getenv("COMPOSER_URL", "http://composer:8003")
 ANALYZER_URL = os.getenv("ANALYZER_URL", "http://analyzer:8002")
 NOTION_WORKER_URL = os.getenv("NOTION_WORKER_URL", "http://notion-worker:8004")
 
+# Get scheduling configuration
+DAILY_SCHEDULE_TIME = os.getenv("SCHEDULER_DAILY_TIME", "01:20")
+
 
 REQUEST_TIMEOUT = float(os.getenv('SCHEDULER_HTTP_TIMEOUT', '30'))
 STATUS_TIMEOUT = float(os.getenv('SCHEDULER_STATUS_TIMEOUT', '15'))
@@ -110,8 +113,9 @@ def daily_job():
 
 def run_schedule():
     """Run the scheduler."""
-    # Schedule the job every day at 8:30 am
-    schedule.every().day.at("14:25").do(daily_job)   #"08:30"
+    # Schedule the job every day at configured time
+    logger.info(f"Scheduling daily job at {DAILY_SCHEDULE_TIME}")
+    schedule.every().day.at(DAILY_SCHEDULE_TIME).do(daily_job)
 
     while True:
         schedule.run_pending()

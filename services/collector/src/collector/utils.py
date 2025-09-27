@@ -47,9 +47,12 @@ def publish_raw(article):
             source=article.source,
         )
         
+        # Exclude None values from the message payload
+        message_data = raw_msg.model_dump(exclude_none=True)
+
         message_id = redis_client.xadd(
             "raw_articles",
-            raw_msg.model_dump(),
+            message_data,
             maxlen=settings.service.stream_max_length,
             approximate=True
         )

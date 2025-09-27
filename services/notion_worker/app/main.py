@@ -32,6 +32,11 @@ async def lifespan(app: FastAPI):
             await task
         logger.info("Notion worker consumer shut down cleanly")
 
+        # Cleanup Redis connections
+        from shared.utils.redis_client import close_all_redis_clients
+        close_all_redis_clients()
+        logger.info("Redis connections closed")
+
 app = FastAPI(lifespan=lifespan)
 
 

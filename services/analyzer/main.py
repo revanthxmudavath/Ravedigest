@@ -51,7 +51,15 @@ async def on_startup():
         logger.error(f"Failed to connect to Redis: {e}")
         raise
 
+async def on_shutdown():
+    """Cleanup on service shutdown."""
+    logger.info("Shutting down Analyzer service...")
+    from shared.utils.redis_client import close_all_redis_clients
+    close_all_redis_clients()
+    logger.info("Redis connections closed")
+
 app.add_event_handler("startup", on_startup)
+app.add_event_handler("shutdown", on_shutdown)
 
 @app.get("/analyzer/health")
 def health():
@@ -187,7 +195,7 @@ async def handle_message(payload, msg_id, r, stream, group):
             developer_focus=dev_focus
         )
 
-        # Save to database
+        # Save to database first (critical operation)
         save_enriched_to_db(enriched)
         ARTICLE_PROCESSED.inc()
 
@@ -195,12 +203,12 @@ async def handle_message(payload, msg_id, r, stream, group):
         redis_client = get_redis_client("analyzer")
         redis_client.xadd(
             "enriched_articles",
-            enriched.model_dump(),
+            enriched.model_dump(exclude_none=True),
             maxlen=settings.service.stream_max_length,
             approximate=True
         )
 
-        # Acknowledge message
+        # Acknowledge message only after all operations succeed
         redis_client.xack(stream, group, msg_id)
         logger.info(f"✅ Processed & acknowledged message {msg_id}")
         

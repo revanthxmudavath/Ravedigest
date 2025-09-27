@@ -109,7 +109,7 @@ def retry(
                     if on_retry:
                         on_retry(e, attempt + 1)
                     
-                    import time
+                    
                     time.sleep(delay)
                 except Exception as e:
                     # Non-retryable exception, re-raise immediately
@@ -235,7 +235,7 @@ def retry_with_backoff(
             delay = calculate_delay(attempt, config)
             logger.warning(f"Function {func.__name__} failed (attempt {attempt + 1}/{config.max_retries + 1}): {e}. Retrying in {delay:.2f}s")
             
-            import time
+            
             time.sleep(delay)
     
     # This should never be reached

@@ -26,10 +26,10 @@ def summarize_articles(text: str) -> tuple[str, float]:
         )
         summary = response.choices[0].message.content.strip()
         logger.debug("Received summary from OpenAI API.")
-        
+
     except Exception as e:
-        logger.error(f"Error during OpenAI API call: {e}")
-        summary = ""
+        logger.error(f"OpenAI API call failed for article summarization: {e}")
+        raise  # Re-raise to trigger retry mechanism
     
     # Calculate relevance score using ROUGE
     try:
