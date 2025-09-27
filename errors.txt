@@ -1,51 +1,61 @@
-[SQL: INSERT INTO rave_articles (id, title, url, summary, categories, published_at, source, relevance_score, developer_focus) VALUES (%(id)s::UUID, %(title)s, %(url)s, %(summary)s, %(categories)s::TEXT[], %(published_at)s, %(source)s, %(relevance_score)s, %(developer_focus)s) RETURNING rave_articles.inserted_at]
+2025-09-27 03:55:11,427 INFO sqlalchemy.engine.Engine [cached since 304.5s ago] {'pk_1': UUID('d73d4a0c-4c02-4633-9ff9-cd744de94a82')}
 
-[parameters: {'id': UUID('0aa302f7-4bdf-4e76-9a90-1dec4fcbae19'), 'title': 'Everyone’s still throwing billions at AI data centers', 'url': 'https://techcrunch.com/video/everyones-still-throwing-billions-at-ai-data-centers/', 'summary': 'From $100 billion OpenAI commitments to $100,000 visa fees, this week showed just how much the tech landscape is shifting. On the latest episode of E ... (67 characters truncated) ... sh and tech&#8217;s talent shuffle. Watch the full episode for more about:&#160;&#160; Equity is TechCrunch’s flagship podcast, produced by [&#8230;]', 'categories': ['AI', 'Startups', 'data centers', 'Equity Video', 'H1-B', 'OpenAI'], 'published_at': datetime.datetime(2025, 9, 26, 17, 30), 'source': 'RSS Feed 1', 'relevance_score': None, 'developer_focus': False}]
+2025-09-27 03:55:12,257 INFO sqlalchemy.engine.Engine ROLLBACK
 
-(Background on this error at: https://sqlalche.me/e/20/gkpj)⁠
+Error handling message 1758945311425-0: body failed validation: body.children[47].paragraph.rich_text[0].text.content.length should be ≤ `2000`, instead was `2044`.
 
-[2025-09-27 03:41:14.568] [ERROR] [collector] [no-correlation-id] collector.redis: Failed to add to stream raw_articles: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+Traceback (most recent call last):
 
-2025-09-27 03:41:14,562 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+  File "/usr/local/lib/python3.12/site-packages/notion_client/client.py", line 149, in _parse_response
 
-2025-09-27 03:41:14,563 INFO sqlalchemy.engine.Engine INSERT INTO rave_articles (id, title, url, summary, categories, published_at, source, relevance_score, developer_focus) VALUES (%(id)s::UUID, %(title)s, %(url)s, %(summary)s, %(categories)s::TEXT[], %(published_at)s, %(source)s, %(relevance_score)s, %(developer_focus)s) RETURNING rave_articles.inserted_at
+    response.raise_for_status()
 
-2025-09-27 03:41:14,563 INFO sqlalchemy.engine.Engine [cached since 13.97s ago] {'id': UUID('0aa302f7-4bdf-4e76-9a90-1dec4fcbae19'), 'title': 'Everyone’s still throwing billions at AI data centers', 'url': 'https://techcrunch.com/video/everyones-still-throwing-billions-at-ai-data-centers/', 'summary': 'From $100 billion OpenAI commitments to $100,000 visa fees, this week showed just how much the tech landscape is shifting. On the latest episode of E ... (67 characters truncated) ... sh and tech&#8217;s talent shuffle. Watch the full episode for more about:&#160;&#160; Equity is TechCrunch’s flagship podcast, produced by [&#8230;]', 'categories': ['AI', 'Startups', 'data centers', 'Equity Video', 'H1-B', 'OpenAI'], 'published_at': datetime.datetime(2025, 9, 26, 17, 30), 'source': 'RSS Feed 1', 'relevance_score': None, 'developer_focus': False}
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 829, in raise_for_status
 
-2025-09-27 03:41:14,565 INFO sqlalchemy.engine.Engine ROLLBACK
+    raise HTTPStatusError(message, request=request, response=self)
 
-[2025-09-27 03:41:14.568] [ERROR] [collector] [no-correlation-id] collector.utils: Error publishing raw article: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://api.notion.com/v1/pages'
 
-Function publish_raw failed (attempt 1/4): Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.. Retrying in 0.92s
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400⁠
 
-[2025-09-27 03:41:15.484] [ERROR] [collector] [no-correlation-id] collector.redis: Failed to add to stream raw_articles: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
 
-[2025-09-27 03:41:15.484] [ERROR] [collector] [no-correlation-id] collector.utils: Error publishing raw article: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+During handling of the above exception, another exception occurred:
 
-Function publish_raw failed (attempt 2/4): Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.. Retrying in 2.19s
 
-[2025-09-27 03:41:17.591] [ERROR] [collector] [no-correlation-id] collector.redis: Failed to add to stream raw_articles: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+Traceback (most recent call last):
 
-[2025-09-27 03:41:17.591] [ERROR] [collector] [no-correlation-id] collector.utils: Error publishing raw article: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+  File "/app/services/notion_worker/app/worker.py", line 112, in consume_digest_stream
 
-Function publish_raw failed (attempt 3/4): Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.. Retrying in 4.23s
+    resp = retry_with_backoff(post_page)
 
-[2025-09-27 03:41:21.826] [ERROR] [collector] [no-correlation-id] collector.redis: Failed to add to stream raw_articles: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-[2025-09-27 03:41:21.826] [ERROR] [collector] [no-correlation-id] collector.utils: Error publishing raw article: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+  File "/app/services/notion_worker/app/utils.py", line 22, in retry_with_backoff
 
-Function publish_raw failed after 3 retries: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+    return func()
 
-[2025-09-27 03:41:21.827] [ERROR] [collector] [no-correlation-id] collector: ❌ Error processing article Everyone’s still throwing billions at AI data centers: Function publish_raw failed after 3 retries
+           ^^^^^^
 
-2025-09-27 03:41:21,829 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+  File "/app/services/notion_worker/app/worker.py", line 106, in post_page
 
-2025-09-27 03:41:21,829 INFO sqlalchemy.engine.Engine INSERT INTO rave_articles (id, title, url, summary, categories, published_at, source, relevance_score, developer_focus) VALUES (%(id)s::UUID, %(title)s, %(url)s, %(summary)s, %(categories)s::TEXT[], %(published_at)s, %(source)s, %(relevance_score)s, %(developer_focus)s) RETURNING rave_articles.inserted_at
+    return notion.pages.create(
 
-2025-09-27 03:41:21,830 INFO sqlalchemy.engine.Engine [cached since 21.32s ago] {'id': UUID('442e2fc9-7e09-4fa0-a192-847bd8a1036d'), 'title': 'The Trump administration\xa0is\xa0going\xa0after semiconductor imports', 'url': 'https://techcrunch.com/2025/09/26/the-trump-administration-is-going-after-semiconductor-imports/', 'summary': 'The Trump administration wants the industry to reach a 1:1 ratio of domestically produced and imported chips.', 'categories': ['AI', 'Government & Policy', 'Hardware', 'Intel', 'semiconductor', 'AI chips', 'Trump Administration'], 'published_at': datetime.datetime(2025, 9, 26, 14, 40, 33), 'source': 'RSS Feed 1', 'relevance_score': None, 'developer_focus': False}
+           ^^^^^^^^^^^^^^^^^^^^
 
-2025-09-27 03:41:21,831 INFO sqlalchemy.engine.Engine ROLLBACK
+  File "/usr/local/lib/python3.12/site-packages/notion_client/api_endpoints.py", line 227, in create
 
-[2025-09-27 03:41:21.832] [WARNING] [collector] [no-correlation-id] collector.db: Article with ID 442e2fc9-7e09-4fa0-a192-847bd8a1036d already exists: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "ix_rave_articles_url"
+    return self.parent.request(
 
-DETAIL:  Key (url)=(https://techcrunch.com/2025/09/26/the-trump-administration-is-going-after-semiconductor-imports/) already exists.
+           ^^^^^^^^^^^^^^^^^^^^
+
+  File "/usr/local/lib/python3.12/site-packages/notion_client/client.py", line 227, in request
+
+    return self._parse_response(response)
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/usr/local/lib/python3.12/site-packages/notion_client/client.py", line 157, in _parse_response
+
+    raise APIResponseError(response, body["message"], code)
+
+notion_client.errors.APIResponseError: body failed validation: body.children[47].paragraph.rich_text[0].text.content.length should be ≤ `2000`, instead was `2044`.Got 
