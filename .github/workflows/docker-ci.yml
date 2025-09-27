@@ -104,18 +104,7 @@ jobs:
             fi
           "
 
-    - name: Push service image
-      if: github.event_name != 'pull_request'
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./services/${{ matrix.service }}/Dockerfile
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
+    
   # Integration testing with full docker-compose environment
   integration-test:
     runs-on: ubuntu-latest
@@ -216,8 +205,6 @@ jobs:
         docker-compose down -v
         docker system prune -f
 
-  
-  
   # Code quality (keep existing linting)
   lint:
     runs-on: ubuntu-latest

@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager, suppress
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 
-from services.composer.app.digest_utils import generate_and_publish_digest, get_db
+from services.composer.app.digest_utils import (generate_and_publish_digest,
+                                                get_db)
 from services.composer.app.schema import DigestOut
 from shared.app_logging.logger import get_logger, setup_logging
 from shared.config.settings import get_settings
