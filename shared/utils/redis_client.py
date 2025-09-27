@@ -32,12 +32,18 @@ class RedisClient:
             return int(value)
         if isinstance(value, (bytes, str, int, float)):
             return value
+        # Handle UUID objects
+        if hasattr(value, "hex"):
+            return str(value)
+        # Handle datetime objects
         if hasattr(value, "isoformat"):
             try:
                 return value.isoformat()
-            except AttributeError as e:
-                self._logger.warning(f"Value has no isoformat(): {e}")
-            return str(value)
+            except (AttributeError, TypeError) as e:
+                self._logger.warning(f"Failed to serialize datetime-like object: {e}")
+                return str(value)
+        # Fallback to string conversion
+        return str(value)
 
     def _get_client(self) -> redis.Redis:
         """Get or create Redis client with connection pooling."""

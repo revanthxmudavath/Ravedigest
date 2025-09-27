@@ -20,7 +20,7 @@ ANALYZER_URL = os.getenv("ANALYZER_URL", "http://analyzer:8002")
 NOTION_WORKER_URL = os.getenv("NOTION_WORKER_URL", "http://notion-worker:8004")
 
 # Get scheduling configuration
-DAILY_SCHEDULE_TIME = os.getenv("SCHEDULER_DAILY_TIME", "01:20")
+DAILY_SCHEDULE_TIME = os.getenv("SCHEDULER_DAILY_TIME", "03:50")
 
 
 REQUEST_TIMEOUT = float(os.getenv("SCHEDULER_HTTP_TIMEOUT", "30"))

@@ -45,7 +45,7 @@ def publish_raw(article):
             title=article.title,
             url=str(article.url),
             summary=article.summary or "",
-            categories=",".join(article.categories),
+            categories=",".join(article.categories) if article.categories else "",
             published_at=article.published_at,
             source=article.source,
         )

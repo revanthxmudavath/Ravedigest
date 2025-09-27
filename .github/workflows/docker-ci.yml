@@ -133,7 +133,7 @@ jobs:
         OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || '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' }}
         NOTION_API_KEY=${{ secrets.NOTION_API_KEY || 'ntn_F21715962124qnPaXBQtymGHubDp4uL0LpoZSn5chLk2pX' }}
         NOTION_DB_ID=${{ secrets.NOTION_DB_ID || '2420816fedb480f086c3c94798039ea5' }}
-        SCHEDULER_DAILY_TIME=20:00
+        SCHEDULER_DAILY_TIME=03:50
         LOG_LEVEL=INFO
         EOF
 

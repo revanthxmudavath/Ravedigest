@@ -2,7 +2,8 @@
 
 import asyncio
 
-from services.composer.app.digest_utils import generate_and_publish_digest, get_db
+from services.composer.app.digest_utils import (generate_and_publish_digest,
+                                                get_db)
 from shared.app_logging.logger import get_logger
 from shared.config.settings import get_settings
 from shared.schemas.messages import EnrichedArticle

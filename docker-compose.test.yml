@@ -169,7 +169,7 @@ services:
       COMPOSER_URL: http://composer:8003
       ANALYZER_URL: http://analyzer:8002
       NOTION_WORKER_URL: http://notion-worker:8004
-      SCHEDULER_DAILY_TIME: "01:20"  # Test time
+      SCHEDULER_DAILY_TIME: "03:50"  # Test time
       SCHEDULER_HTTP_TIMEOUT: 30
       SCHEDULER_STATUS_TIMEOUT: 15
       LOG_LEVEL: INFO

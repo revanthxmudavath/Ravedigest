@@ -1,0 +1,51 @@
+[SQL: INSERT INTO rave_articles (id, title, url, summary, categories, published_at, source, relevance_score, developer_focus) VALUES (%(id)s::UUID, %(title)s, %(url)s, %(summary)s, %(categories)s::TEXT[], %(published_at)s, %(source)s, %(relevance_score)s, %(developer_focus)s) RETURNING rave_articles.inserted_at]
+
+[parameters: {'id': UUID('0aa302f7-4bdf-4e76-9a90-1dec4fcbae19'), 'title': 'Everyone’s still throwing billions at AI data centers', 'url': 'https://techcrunch.com/video/everyones-still-throwing-billions-at-ai-data-centers/', 'summary': 'From $100 billion OpenAI commitments to $100,000 visa fees, this week showed just how much the tech landscape is shifting. On the latest episode of E ... (67 characters truncated) ... sh and tech&#8217;s talent shuffle. Watch the full episode for more about:&#160;&#160; Equity is TechCrunch’s flagship podcast, produced by [&#8230;]', 'categories': ['AI', 'Startups', 'data centers', 'Equity Video', 'H1-B', 'OpenAI'], 'published_at': datetime.datetime(2025, 9, 26, 17, 30), 'source': 'RSS Feed 1', 'relevance_score': None, 'developer_focus': False}]
+
+(Background on this error at: https://sqlalche.me/e/20/gkpj)⁠
+
+[2025-09-27 03:41:14.568] [ERROR] [collector] [no-correlation-id] collector.redis: Failed to add to stream raw_articles: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+
+2025-09-27 03:41:14,562 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+
+2025-09-27 03:41:14,563 INFO sqlalchemy.engine.Engine INSERT INTO rave_articles (id, title, url, summary, categories, published_at, source, relevance_score, developer_focus) VALUES (%(id)s::UUID, %(title)s, %(url)s, %(summary)s, %(categories)s::TEXT[], %(published_at)s, %(source)s, %(relevance_score)s, %(developer_focus)s) RETURNING rave_articles.inserted_at
+
+2025-09-27 03:41:14,563 INFO sqlalchemy.engine.Engine [cached since 13.97s ago] {'id': UUID('0aa302f7-4bdf-4e76-9a90-1dec4fcbae19'), 'title': 'Everyone’s still throwing billions at AI data centers', 'url': 'https://techcrunch.com/video/everyones-still-throwing-billions-at-ai-data-centers/', 'summary': 'From $100 billion OpenAI commitments to $100,000 visa fees, this week showed just how much the tech landscape is shifting. On the latest episode of E ... (67 characters truncated) ... sh and tech&#8217;s talent shuffle. Watch the full episode for more about:&#160;&#160; Equity is TechCrunch’s flagship podcast, produced by [&#8230;]', 'categories': ['AI', 'Startups', 'data centers', 'Equity Video', 'H1-B', 'OpenAI'], 'published_at': datetime.datetime(2025, 9, 26, 17, 30), 'source': 'RSS Feed 1', 'relevance_score': None, 'developer_focus': False}
+
+2025-09-27 03:41:14,565 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[2025-09-27 03:41:14.568] [ERROR] [collector] [no-correlation-id] collector.utils: Error publishing raw article: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+
+Function publish_raw failed (attempt 1/4): Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.. Retrying in 0.92s
+
+[2025-09-27 03:41:15.484] [ERROR] [collector] [no-correlation-id] collector.redis: Failed to add to stream raw_articles: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+
+[2025-09-27 03:41:15.484] [ERROR] [collector] [no-correlation-id] collector.utils: Error publishing raw article: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+
+Function publish_raw failed (attempt 2/4): Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.. Retrying in 2.19s
+
+[2025-09-27 03:41:17.591] [ERROR] [collector] [no-correlation-id] collector.redis: Failed to add to stream raw_articles: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+
+[2025-09-27 03:41:17.591] [ERROR] [collector] [no-correlation-id] collector.utils: Error publishing raw article: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+
+Function publish_raw failed (attempt 3/4): Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.. Retrying in 4.23s
+
+[2025-09-27 03:41:21.826] [ERROR] [collector] [no-correlation-id] collector.redis: Failed to add to stream raw_articles: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+
+[2025-09-27 03:41:21.826] [ERROR] [collector] [no-correlation-id] collector.utils: Error publishing raw article: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+
+Function publish_raw failed after 3 retries: Invalid input of type: 'NoneType'. Convert to a bytes, string, int or float first.
+
+[2025-09-27 03:41:21.827] [ERROR] [collector] [no-correlation-id] collector: ❌ Error processing article Everyone’s still throwing billions at AI data centers: Function publish_raw failed after 3 retries
+
+2025-09-27 03:41:21,829 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+
+2025-09-27 03:41:21,829 INFO sqlalchemy.engine.Engine INSERT INTO rave_articles (id, title, url, summary, categories, published_at, source, relevance_score, developer_focus) VALUES (%(id)s::UUID, %(title)s, %(url)s, %(summary)s, %(categories)s::TEXT[], %(published_at)s, %(source)s, %(relevance_score)s, %(developer_focus)s) RETURNING rave_articles.inserted_at
+
+2025-09-27 03:41:21,830 INFO sqlalchemy.engine.Engine [cached since 21.32s ago] {'id': UUID('442e2fc9-7e09-4fa0-a192-847bd8a1036d'), 'title': 'The Trump administration\xa0is\xa0going\xa0after semiconductor imports', 'url': 'https://techcrunch.com/2025/09/26/the-trump-administration-is-going-after-semiconductor-imports/', 'summary': 'The Trump administration wants the industry to reach a 1:1 ratio of domestically produced and imported chips.', 'categories': ['AI', 'Government & Policy', 'Hardware', 'Intel', 'semiconductor', 'AI chips', 'Trump Administration'], 'published_at': datetime.datetime(2025, 9, 26, 14, 40, 33), 'source': 'RSS Feed 1', 'relevance_score': None, 'developer_focus': False}
+
+2025-09-27 03:41:21,831 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[2025-09-27 03:41:21.832] [WARNING] [collector] [no-correlation-id] collector.db: Article with ID 442e2fc9-7e09-4fa0-a192-847bd8a1036d already exists: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "ix_rave_articles_url"
+
+DETAIL:  Key (url)=(https://techcrunch.com/2025/09/26/the-trump-administration-is-going-after-semiconductor-imports/) already exists.

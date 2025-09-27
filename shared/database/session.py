@@ -41,7 +41,8 @@ SessionLocal = sessionmaker(
 def init_db():
     """Initialize database tables."""
     try:
-        Base.metadata.create_all(bind=engine)
+        # Use checkfirst=True to avoid DuplicateTable errors
+        Base.metadata.create_all(bind=engine, checkfirst=True)
         logger.info("✅ Database initialized successfully")
     except Exception as e:
         logger.error(f"❌ Failed to initialize database: {e}")
