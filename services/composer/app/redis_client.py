@@ -3,8 +3,7 @@ from datetime import datetime, timezone
 
 from shared.app_logging.logger import get_logger
 from shared.schemas.messages import DigestReady
-from shared.utils.redis_client import \
-    get_redis_client as get_shared_redis_client
+from shared.utils.redis_client import get_redis_client as get_shared_redis_client
 from shared.utils.retry import retry
 
 logger = get_logger("composer.redis_client")
