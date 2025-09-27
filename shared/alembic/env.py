@@ -26,12 +26,14 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
 
+
 def get_database_url() -> str:
     """Resolve database URL from env, ini, or CLI overrides."""
     default_url = context.config.get_main_option("sqlalchemy.url")
     db_url = os.getenv("POSTGRES_URL", default_url)
     x_args = context.get_x_argument(as_dictionary=True)
     return x_args.get("db_url", db_url)
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -69,4 +71,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

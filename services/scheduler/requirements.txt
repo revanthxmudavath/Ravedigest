@@ -3,4 +3,4 @@ requests==2.31.0
 tenacity==8.2.3
 fastapi
 uvicorn
-pydantic_settings
+pydantic-settings

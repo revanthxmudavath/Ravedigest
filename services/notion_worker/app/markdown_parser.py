@@ -1,9 +1,26 @@
-#services.notion_worker.app.markdown_parser.py
+# services.notion_worker.app.markdown_parser.py
 import logging
 import re
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+def truncate_text(text: str, max_length: int = 2000, suffix: str = "...") -> str:
+    """Truncate text to fit Notion's character limits."""
+    if len(text) <= max_length:
+        return text
+
+    # Leave room for suffix
+    truncate_at = max_length - len(suffix)
+    # Try to break at word boundary
+    if " " in text[:truncate_at]:
+        last_space = text[:truncate_at].rfind(" ")
+        if last_space > truncate_at - 100:  # Don't break too early
+            truncate_at = last_space
+
+    return text[:truncate_at].rstrip() + suffix
+
 
 def markdown_to_blocks(md: str) -> list[dict]:
     logger.info("📄 Starting markdown-to-Notion block parsing")
@@ -15,7 +32,7 @@ def markdown_to_blocks(md: str) -> list[dict]:
     for idx, raw in enumerate(articles):
         raw = raw.strip()
         if not raw:
-            continue 
+            continue
 
         logger.debug("🔍 Parsing article #%d", idx)
 
@@ -31,50 +48,70 @@ def markdown_to_blocks(md: str) -> list[dict]:
 
         logger.debug("Title: %s | Source: %s | URL: %s", title, source, url)
 
-        blocks.extend([
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{
-                        "type": "text",
-                        "text": {"content" : f"🔹 {title}", "link": {"url": url} if url else None}
-                    }]
-                }
-            },
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{
-                        "type": "text",
-                        "text": {"content": f"🌐 Source: {source}"}
-                    }]
-                }
-            },
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{
-                        "type": "text",
-                        "text": {"content": f"📝 Summary: {summary}"}
-                    }]
-                }   
-            },
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{
-                        "type": "text",
-                        "text": {"content": f"🔗 Read More", "link": {"url": url} if url else None}
-                    }]
-                }
-            },
-            {"object": "block", "type": "divider", "divider": {}}
-        ])
+        # Truncate content to fit Notion limits
+        title_content = truncate_text(f"🔹 {title}", 2000)
+        source_content = truncate_text(f"🌐 Source: {source}", 2000)
+        summary_content = truncate_text(f"📝 Summary: {summary}", 2000)
+
+        blocks.extend(
+            [
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": title_content,
+                                    "link": {"url": url} if url else None,
+                                },
+                            }
+                        ]
+                    },
+                },
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {"content": source_content},
+                            }
+                        ]
+                    },
+                },
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {"content": summary_content},
+                            }
+                        ]
+                    },
+                },
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": f"🔗 Read More",
+                                    "link": {"url": url} if url else None,
+                                },
+                            }
+                        ]
+                    },
+                },
+                {"object": "block", "type": "divider", "divider": {}},
+            ]
+        )
 
     logger.info("✅ Finished building %d Notion blocks", len(blocks))
     return blocks
-

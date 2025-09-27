@@ -19,28 +19,35 @@ POSTGRES_URL = settings.database.postgres_url
 # Configure SQLAlchemy logging
 logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
-logger.info(f"▶︎ Connecting to database: {POSTGRES_URL.split('@')[1] if '@' in POSTGRES_URL else 'localhost'}")
+logger.info(
+    f"▶︎ Connecting to database: {POSTGRES_URL.split('@')[1] if '@' in POSTGRES_URL else 'localhost'}"
+)
 
 # Create engine with connection pooling
 engine = create_engine(
-    POSTGRES_URL, 
+    POSTGRES_URL,
     echo=True,
     pool_size=10,
     max_overflow=20,
     pool_pre_ping=True,
-    pool_recycle=3600
+    pool_recycle=3600,
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
+SessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
+)
+
 
 def init_db():
     """Initialize database tables."""
     try:
-        Base.metadata.create_all(bind=engine)
+        # Use checkfirst=True to avoid DuplicateTable errors
+        Base.metadata.create_all(bind=engine, checkfirst=True)
         logger.info("✅ Database initialized successfully")
     except Exception as e:
         logger.error(f"❌ Failed to initialize database: {e}")
         raise
+
 
 def get_db_session():
     """Get a database session with proper error handling."""

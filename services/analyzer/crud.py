@@ -8,6 +8,7 @@ from shared.utils.retry import retry
 
 logger = get_logger("analyzer.crud")
 
+
 @retry(retryable_exceptions=(Exception,))
 def save_enriched_to_db(enriched: EnrichedArticle) -> None:
     """
@@ -21,7 +22,9 @@ def save_enriched_to_db(enriched: EnrichedArticle) -> None:
             existing.relevance_score = enriched.relevance_score
             existing.developer_focus = enriched.developer_focus
             session.commit()
-            logger.info(f"Updated Article {enriched.id} with developer_focus={enriched.developer_focus}")
+            logger.info(
+                f"Updated Article {enriched.id} with developer_focus={enriched.developer_focus}"
+            )
         else:
             new = Article(
                 id=enriched.id,
@@ -36,7 +39,9 @@ def save_enriched_to_db(enriched: EnrichedArticle) -> None:
             )
             session.add(new)
             session.commit()
-            logger.info(f"Inserted Article {enriched.id} with developer_focus={enriched.developer_focus}")
+            logger.info(
+                f"Inserted Article {enriched.id} with developer_focus={enriched.developer_focus}"
+            )
     except Exception as e:
         session.rollback()
         logger.error(f"Error saving enriched article {enriched.id}: {e}")

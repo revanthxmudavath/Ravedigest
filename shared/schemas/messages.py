@@ -12,13 +12,19 @@ class RawArticle(BaseModel):
     url: str = Field(..., description="Canonical URL")
     summary: str = Field(..., description="Short summary from RSS or feed")
     categories: str = Field(..., description="Comma-separated categories/tags")
-    published_at: datetime | None = Field(None, description="Original publication timestamp")
+    published_at: datetime | None = Field(
+        None, description="Original publication timestamp"
+    )
     source: str = Field(..., description="Origin of the article (e.g., RSS feed name)")
+
 
 class EnrichedArticle(RawArticle):
     summary: str = Field(..., description="LLM-generated concise summary")
-    relevance_score: float = Field(..., ge=0.0, le=1.0, description="Normalized relevance from 0–1")
+    relevance_score: float = Field(
+        ..., ge=0.0, le=1.0, description="Normalized relevance from 0–1"
+    )
     developer_focus: bool = Field(..., description="Flag for developer-focused content")
+
 
 class DigestReady(BaseModel):
     version: Literal["1.0"] = Field("1.0", description="Schema version")

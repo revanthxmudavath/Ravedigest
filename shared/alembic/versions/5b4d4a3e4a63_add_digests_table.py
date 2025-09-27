@@ -27,7 +27,12 @@ def upgrade() -> None:
         sa.Column("url", sa.Text(), nullable=False),
         sa.Column("summary", sa.Text(), nullable=True),
         sa.Column("source", sa.String(), nullable=False),
-        sa.Column("inserted_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "inserted_at",
+            sa.DateTime(),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
     )
     op.create_index(op.f("ix_digests_url"), "digests", ["url"], unique=True)
     op.create_index(op.f("ix_digests_source"), "digests", ["source"], unique=False)

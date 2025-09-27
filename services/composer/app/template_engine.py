@@ -9,16 +9,15 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 TEMPLATE_DIR = os.getenv(
-    "DIGEST_TEMPLATE_DIR",
-    os.path.join(os.path.dirname(__file__), "templates")
+    "DIGEST_TEMPLATE_DIR", os.path.join(os.path.dirname(__file__), "templates")
 )
 
 logger.info("Intializing Jinja2 with template directory: %s", TEMPLATE_DIR)
 
 _env = Environment(
-    loader=FileSystemLoader(TEMPLATE_DIR),
-    autoescape=select_autoescape()
+    loader=FileSystemLoader(TEMPLATE_DIR), autoescape=select_autoescape()
 )
+
 
 def get_template(name: str) -> Template:
     logger.debug("Loading template %r", name)
@@ -49,17 +48,21 @@ def render(name: str, **ctx) -> str:
         elapsed = (time.perf_counter() - start) * 1000
         logger.exception(
             "Error rendering template %r after %.2fms with context %r: %s",
-            name, elapsed, ctx, e
+            name,
+            elapsed,
+            ctx,
+            e,
         )
         raise
+
 
 def validate_markdown(md: str):
     if not md.strip():
         raise ValueError("Digest content is empty")
-    
+
     if not re.search(r"^## \d+\.", md, re.MULTILINE):
         raise ValueError("No article sections found")
-    
+
     if "[[" in md or "]]" in md:
         raise ValueError("Possible broken markdown link brackets")
 

@@ -19,10 +19,14 @@ COMPOSER_URL = os.getenv("COMPOSER_URL", "http://composer:8003")
 ANALYZER_URL = os.getenv("ANALYZER_URL", "http://analyzer:8002")
 NOTION_WORKER_URL = os.getenv("NOTION_WORKER_URL", "http://notion-worker:8004")
 
+# Get scheduling configuration
+DAILY_SCHEDULE_TIME = os.getenv("SCHEDULER_DAILY_TIME", "03:50")
 
-REQUEST_TIMEOUT = float(os.getenv('SCHEDULER_HTTP_TIMEOUT', '30'))
-STATUS_TIMEOUT = float(os.getenv('SCHEDULER_STATUS_TIMEOUT', '15'))
-STATUS_MAX_ATTEMPTS = int(os.getenv('SCHEDULER_STATUS_MAX_ATTEMPTS', '35'))
+
+REQUEST_TIMEOUT = float(os.getenv("SCHEDULER_HTTP_TIMEOUT", "30"))
+STATUS_TIMEOUT = float(os.getenv("SCHEDULER_STATUS_TIMEOUT", "15"))
+STATUS_MAX_ATTEMPTS = int(os.getenv("SCHEDULER_STATUS_MAX_ATTEMPTS", "35"))
+
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5))
 def trigger_collector():
@@ -34,6 +38,7 @@ def trigger_collector():
     logger.info("Collector service triggered successfully.")
     return response.json()
 
+
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5))
 def trigger_composer():
     """Trigger the composer service to generate a digest."""
@@ -43,6 +48,7 @@ def trigger_composer():
     response.raise_for_status()
     logger.info("Composer service triggered successfully.")
     return response.json()
+
 
 @retry(stop=stop_after_attempt(STATUS_MAX_ATTEMPTS), wait=wait_fixed(10))
 def wait_for_service(service_name: str, url: str):
@@ -58,7 +64,9 @@ def wait_for_service(service_name: str, url: str):
             # Check if there's a status message about stream not existing
             status_msg = data.get("status", "")
             if "Stream not found" in status_msg:
-                logger.info(f"{service_name} stream not found - assuming idle (no work to process)")
+                logger.info(
+                    f"{service_name} stream not found - assuming idle (no work to process)"
+                )
                 return
             else:
                 raise Exception(f"{service_name} is not idle yet. {status_msg}")
@@ -71,6 +79,7 @@ def wait_for_service(service_name: str, url: str):
     except Exception as e:
         logger.error(f"Error checking {service_name} status: {e}")
         raise
+
 
 def daily_job():
     """The job to be run daily."""
@@ -85,7 +94,10 @@ def daily_job():
     try:
         wait_for_service("analyzer", f"{ANALYZER_URL}/analyzer/status")
     except RetryError:
-        logger.warning("Analyzer did not become idle after %s attempts; deferring to next schedule", STATUS_MAX_ATTEMPTS)
+        logger.warning(
+            "Analyzer did not become idle after %s attempts; deferring to next schedule",
+            STATUS_MAX_ATTEMPTS,
+        )
         return
     except Exception:
         logger.exception("Error while waiting for analyzer to become idle")
@@ -100,7 +112,10 @@ def daily_job():
     try:
         wait_for_service("notion-worker", f"{NOTION_WORKER_URL}/notion/status")
     except RetryError:
-        logger.warning("Notion worker did not become idle after %s attempts; deferring to next schedule", STATUS_MAX_ATTEMPTS)
+        logger.warning(
+            "Notion worker did not become idle after %s attempts; deferring to next schedule",
+            STATUS_MAX_ATTEMPTS,
+        )
         return
     except Exception:
         logger.exception("Error while waiting for notion worker to become idle")
@@ -108,25 +123,31 @@ def daily_job():
 
     logger.info("Daily job completed successfully.")
 
+
 def run_schedule():
     """Run the scheduler."""
-    # Schedule the job every day at 8:30 am
-    schedule.every().day.at("14:25").do(daily_job)   #"08:30"
+    # Schedule the job every day at configured time
+    logger.info(f"Scheduling daily job at {DAILY_SCHEDULE_TIME}")
+    schedule.every().day.at(DAILY_SCHEDULE_TIME).do(daily_job)
 
     while True:
         schedule.run_pending()
         time.sleep(1)
 
+
 # FastAPI app for health checks
 app = FastAPI()
+
 
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
 
+
 def run_fastapi():
     """Run the FastAPI app."""
     uvicorn.run(app, host="0.0.0.0", port=8005)
+
 
 if __name__ == "__main__":
     # Run the scheduler in a separate thread

@@ -11,6 +11,7 @@ from shared.database.session import SessionLocal
 logger = get_logger("composer.digest_utils")
 settings = get_settings()
 
+
 def get_db():
     """Get database session with proper error handling."""
     db = SessionLocal()
@@ -23,38 +24,39 @@ def get_db():
     finally:
         db.close()
 
+
 def generate_and_publish_digest(db):
     """Generate and publish a digest from top articles."""
     try:
         logger.info("Generating digest from top articles")
-        
+
         # Get top articles
         articles = get_top_articles(db, limit=settings.service.max_articles_per_digest)
         logger.info(f"Found {len(articles)} articles for digest")
-        
+
         if not articles:
             logger.warning("No articles found for digest generation")
             return None
-        
+
         # Render markdown
         md = render("digest.md.j2", title="Today", articles=articles)
         validate_markdown(md)
-        
+
         # Create digest
         digest = create_digest(
-            db, 
-            title="Today's Digest", 
-            summary=md, 
-            url=f"/digests/{uuid.uuid4()}", 
-            source="AI-Tech"
+            db,
+            title="Today's Digest",
+            summary=md,
+            url=f"/digests/{uuid.uuid4()}",
+            source="AI-Tech",
         )
-        
+
         # Publish to stream
         publish_digest_ready(digest)
         logger.info(f"Successfully generated and published digest: {digest.id}")
-        
+
         return digest
-        
+
     except Exception as e:
         logger.error(f"Error generating digest: {e}")
         raise

@@ -36,6 +36,27 @@ dist/
 *.egg-info/
 
 # Docker
-Dockerfile
 docker-compose.yml
 *.tar
+
+# Documentation and CI
+README.md
+*.md
+.github/
+
+# Development tools
+Makefile
+bandit.yaml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node.js (if any)
+node_modules/
+npm-debug.log*
+
+# Specific to this project
+migrations/
+*.sqlite3

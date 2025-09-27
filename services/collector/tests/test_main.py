@@ -9,7 +9,7 @@ from uuid import uuid4
 import pytest
 
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
 def test_collector_imports():
@@ -18,15 +18,17 @@ def test_collector_imports():
         import collector.article
         import collector.main
         import collector.utils
+
         assert True
     except ImportError as e:
         pytest.fail(f"Import failed: {e}")
 
 
-@patch('collector.main.init_db')
+@patch("collector.main.init_db")
 def test_app_creation(mock_init_db):
     """Test that FastAPI app can be created."""
     from collector.main import app
+
     assert app is not None
     assert app.title == "RaveDigest Collector Service"
 
@@ -42,7 +44,7 @@ def test_article_class():
         published_at=datetime(2024, 1, 1),
         source="Test Source",
         summary="Test summary",
-        categories=["tech"]
+        categories=["tech"],
     )
 
     assert article.title == "Test Article"

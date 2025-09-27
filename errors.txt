@@ -1,0 +1,61 @@
+2025-09-27 03:55:11,427 INFO sqlalchemy.engine.Engine [cached since 304.5s ago] {'pk_1': UUID('d73d4a0c-4c02-4633-9ff9-cd744de94a82')}
+
+2025-09-27 03:55:12,257 INFO sqlalchemy.engine.Engine ROLLBACK
+
+Error handling message 1758945311425-0: body failed validation: body.children[47].paragraph.rich_text[0].text.content.length should be ≤ `2000`, instead was `2044`.
+
+Traceback (most recent call last):
+
+  File "/usr/local/lib/python3.12/site-packages/notion_client/client.py", line 149, in _parse_response
+
+    response.raise_for_status()
+
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 829, in raise_for_status
+
+    raise HTTPStatusError(message, request=request, response=self)
+
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://api.notion.com/v1/pages'
+
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400⁠
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "/app/services/notion_worker/app/worker.py", line 112, in consume_digest_stream
+
+    resp = retry_with_backoff(post_page)
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/app/services/notion_worker/app/utils.py", line 22, in retry_with_backoff
+
+    return func()
+
+           ^^^^^^
+
+  File "/app/services/notion_worker/app/worker.py", line 106, in post_page
+
+    return notion.pages.create(
+
+           ^^^^^^^^^^^^^^^^^^^^
+
+  File "/usr/local/lib/python3.12/site-packages/notion_client/api_endpoints.py", line 227, in create
+
+    return self.parent.request(
+
+           ^^^^^^^^^^^^^^^^^^^^
+
+  File "/usr/local/lib/python3.12/site-packages/notion_client/client.py", line 227, in request
+
+    return self._parse_response(response)
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/usr/local/lib/python3.12/site-packages/notion_client/client.py", line 157, in _parse_response
+
+    raise APIResponseError(response, body["message"], code)
+
+notion_client.errors.APIResponseError: body failed validation: body.children[47].paragraph.rich_text[0].text.content.length should be ≤ `2000`, instead was `2044`.Got 

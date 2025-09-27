@@ -1,4 +1,4 @@
-#services/collector/src/collector/main.py
+# services/collector/src/collector/main.py
 from uuid import UUID
 
 from collector import parse
@@ -21,42 +21,53 @@ app.add_event_handler("startup", init_db)
 
 # Get configuration
 settings = get_settings()
-RSS_FEEDS = [(url, f"RSS Feed {i+1}") for i, url in enumerate(settings.service.rss_feeds)]
+RSS_FEEDS = [
+    (url, f"RSS Feed {i+1}") for i, url in enumerate(settings.service.rss_feeds)
+]
 
 # Create health checker
 health_checker = create_collector_health_checker()
+
 
 @app.get("/collector/health")
 def health_check():
     """Comprehensive health check endpoint."""
     return health_checker.run_all_checks()
 
+
 @app.get("/collector/health/live")
 def liveness_check():
     """Liveness check endpoint."""
     return {"status": "alive", "service": "collector"}
 
+
 @app.get("/collector/health/ready")
 def readiness_check():
     """Readiness check endpoint."""
     health_data = health_checker.run_all_checks()
-    critical_checks = [check for check in health_data["checks"] 
-                      if check["name"] in ["database", "redis"]]
-    all_critical_healthy = all(check["status"] == "healthy" for check in critical_checks)
-    
+    critical_checks = [
+        check
+        for check in health_data["checks"]
+        if check["name"] in ["database", "redis"]
+    ]
+    all_critical_healthy = all(
+        check["status"] == "healthy" for check in critical_checks
+    )
+
     return {
         "status": "ready" if all_critical_healthy else "not_ready",
         "service": "collector",
         "critical_dependencies": {
             check["name"]: check["status"] for check in critical_checks
-        }
+        },
     }
+
 
 @app.get("/collect/rss")
 def collect_articles():
     """Collect articles from RSS feeds."""
     total_collected = 0
-    total_skipped = 0 
+    total_skipped = 0
     total_errors = 0
 
     logger.info(f"🚀 Starting RSS collection from {len(RSS_FEEDS)} feeds")
@@ -79,23 +90,25 @@ def collect_articles():
                     publish_raw(article)
                     total_collected += 1
                     logger.debug(f"✅ Saved article: {article.title[:50]}...")
-                    
+
                 except Exception as e:
                     logger.error(f"❌ Error processing article {article.title}: {e}")
                     total_errors += 1
                     continue
-                    
+
         except Exception as e:
             logger.error(f"❌ Error parsing feed {source}: {e}")
             total_errors += 1
             continue
-    
-    logger.info(f"✅ Collection complete: {total_collected} articles saved, {total_skipped} duplicates skipped, {total_errors} errors")
+
+    logger.info(
+        f"✅ Collection complete: {total_collected} articles saved, {total_skipped} duplicates skipped, {total_errors} errors"
+    )
 
     return {
         "status": "success",
         "total_collected": total_collected,
         "total_skipped": total_skipped,
         "total_errors": total_errors,
-        "feeds_processed": len(RSS_FEEDS)
+        "feeds_processed": len(RSS_FEEDS),
     }

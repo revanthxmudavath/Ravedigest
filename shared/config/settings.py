@@ -144,7 +144,9 @@ class NotionSettings(AppBaseSettings):
         # Remove hyphens and check if it's 32 hexadecimal characters
         cleaned_id = v.replace("-", "")
         if not re.match(r"^[0-9a-fA-F]{32}$", cleaned_id):
-            raise ValueError("Notion database ID must be a valid UUID format (32 hexadecimal characters)")
+            raise ValueError(
+                "Notion database ID must be a valid UUID format (32 hexadecimal characters)"
+            )
 
         return v
 
@@ -246,7 +248,7 @@ class ServiceSettings(AppBaseSettings):
                 if not parsed.scheme or not parsed.netloc:
                     raise ValueError(f"Invalid RSS feed URL: {feed_url}")
 
-                if parsed.scheme not in ['http', 'https']:
+                if parsed.scheme not in ["http", "https"]:
                     raise ValueError(f"RSS feed URL must use HTTP or HTTPS: {feed_url}")
 
             except Exception as e:

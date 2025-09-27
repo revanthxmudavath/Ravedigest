@@ -1,10 +1,9 @@
-#services/composer/app/redis_client.py
+# services/composer/app/redis_client.py
 from datetime import datetime, timezone
 
 from shared.app_logging.logger import get_logger
 from shared.schemas.messages import DigestReady
-from shared.utils.redis_client import \
-    get_redis_client as get_shared_redis_client
+from shared.utils.redis_client import get_redis_client as get_shared_redis_client
 from shared.utils.retry import retry
 
 logger = get_logger("composer.redis_client")
@@ -24,7 +23,7 @@ def publish_digest_ready(digest) -> None:
             summary=digest.summary,
             url=digest.url,
             source=digest.source,
-            inserted_at=inserted_at
+            inserted_at=inserted_at,
         )
 
         # Convert to string format for Redis

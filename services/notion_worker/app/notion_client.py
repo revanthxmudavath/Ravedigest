@@ -1,4 +1,4 @@
-#services.notion_worker.app.notion_client.py
+# services.notion_worker.app.notion_client.py
 import os
 
 from notion_client import Client
@@ -22,14 +22,12 @@ def publish_to_notion(event: DigestReady) -> str:
         "title": {"rich_text": [{"text": {"content": event.title}}]},
         "url": {"rich_text": [{"text": {"content": event.url}}]},
         "source": {"rich_text": [{"text": {"content": event.source}}]},
-        "inserted_at": {"date": {"start": event.inserted_at.isoformat()}}
+        "inserted_at": {"date": {"start": event.inserted_at.isoformat()}},
     }
 
     # Create page using the correct API
     page = notion.pages.create(
-        parent={"database_id": DATABASE_ID},
-        properties=properties,
-        children=blocks
+        parent={"database_id": DATABASE_ID}, properties=properties, children=blocks
     )
 
     return page["url"]
