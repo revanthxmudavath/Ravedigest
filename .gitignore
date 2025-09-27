@@ -170,3 +170,6 @@ CODEMAP_raw.txt
 
 # Temporary Claude Code files
 CLAUDE.md
+
+.env
+docker-ci.yml
