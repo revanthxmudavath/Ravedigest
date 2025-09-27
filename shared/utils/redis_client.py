@@ -51,7 +51,7 @@ class RedisClient:
                         socket_timeout=self.settings.service.redis_timeout,
                         retry_on_timeout=True,
                         max_connections=20,
-                        health_check_interval=30
+                        health_check_interval=30,
                     )
                 else:
                     self._client = redis.Redis(
@@ -63,19 +63,19 @@ class RedisClient:
                         socket_timeout=self.settings.service.redis_timeout,
                         retry_on_timeout=True,
                         max_connections=20,
-                        health_check_interval=30
+                        health_check_interval=30,
                     )
-                
+
                 # Test connection
                 self._client.ping()
                 self._logger.info("✅ Connected to Redis successfully")
-                
+
             except Exception as e:
                 self._logger.error(f"❌ Failed to connect to Redis: {e}")
                 raise
-        
+
         return self._client
-    
+
     def ping(self) -> bool:
         """Test Redis connection."""
         try:
@@ -84,7 +84,7 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Redis ping failed: {e}")
             return False
-    
+
     def get(self, key: str) -> Optional[str]:
         """Get value by key with error handling."""
         try:
@@ -93,7 +93,7 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to get key {key}: {e}")
             return None
-    
+
     def set(self, key: str, value: str, ex: Optional[int] = None) -> bool:
         """Set key-value pair with optional expiration."""
         try:
@@ -102,7 +102,7 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to set key {key}: {e}")
             return False
-    
+
     def sadd(self, key: str, *values: str) -> int:
         """Add values to a set."""
         try:
@@ -111,7 +111,7 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to add to set {key}: {e}")
             return 0
-    
+
     def sismember(self, key: str, value: str) -> bool:
         """Check if value is in set."""
         try:
@@ -120,7 +120,7 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to check set membership {key}: {e}")
             return False
-    
+
     def xadd(
         self,
         stream: str,
@@ -150,9 +150,15 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to add to stream {stream}: {e}")
             raise
-    
-    def xreadgroup(self, group: str, consumer: str, streams: Dict[str, str], 
-                   count: int = 1, block: int = 1000) -> List[Tuple[str, List[Tuple[str, Dict[str, Any]]]]]:
+
+    def xreadgroup(
+        self,
+        group: str,
+        consumer: str,
+        streams: Dict[str, str],
+        count: int = 1,
+        block: int = 1000,
+    ) -> List[Tuple[str, List[Tuple[str, Dict[str, Any]]]]]:
         """Read from Redis stream with consumer group."""
         try:
             client = self._get_client()
@@ -160,8 +166,10 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to read from stream group {group}: {e}")
             return []
-    
-    def xgroup_create(self, stream: str, group: str, id: str = "0", mkstream: bool = True) -> bool:
+
+    def xgroup_create(
+        self, stream: str, group: str, id: str = "0", mkstream: bool = True
+    ) -> bool:
         """Create consumer group for stream."""
         try:
             client = self._get_client()
@@ -178,7 +186,7 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to create consumer group {group}: {e}")
             return False
-    
+
     def xack(self, stream: str, group: str, message_id: str) -> int:
         """Acknowledge message in consumer group."""
         try:
@@ -187,9 +195,15 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to ack message {message_id}: {e}")
             return 0
-    
-    def xpending_range(self, stream: str, group: str, min_id: str = "-", 
-                      max_id: str = "+", count: int = 10) -> List[Dict[str, Any]]:
+
+    def xpending_range(
+        self,
+        stream: str,
+        group: str,
+        min_id: str = "-",
+        max_id: str = "+",
+        count: int = 10,
+    ) -> List[Dict[str, Any]]:
         """Get pending messages in consumer group."""
         try:
             client = self._get_client()
@@ -197,8 +211,10 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to get pending messages: {e}")
             return []
-    
-    def xrange(self, stream: str, min_id: str = "-", max_id: str = "+", count: int = 10) -> List[Tuple[str, Dict[str, Any]]]:
+
+    def xrange(
+        self, stream: str, min_id: str = "-", max_id: str = "+", count: int = 10
+    ) -> List[Tuple[str, Dict[str, Any]]]:
         """Get messages from stream by ID range."""
         try:
             client = self._get_client()
@@ -206,7 +222,7 @@ class RedisClient:
         except Exception as e:
             self._logger.error(f"Failed to get messages from stream: {e}")
             return []
-    
+
     def close(self):
         """Close Redis connection."""
         if self._client:
@@ -245,6 +261,5 @@ def get_redis_client_legacy() -> redis.Redis:
             port=settings.redis.redis_port,
             db=settings.redis.redis_db,
             password=settings.redis.redis_password,
-            decode_responses=True
+            decode_responses=True,
         )
-

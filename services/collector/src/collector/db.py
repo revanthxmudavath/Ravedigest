@@ -7,6 +7,7 @@ from shared.utils.retry import retry
 
 logger = get_logger("collector.db")
 
+
 @retry(retryable_exceptions=(Exception,))
 def save_articles_to_db(article_data):
     """Save article to database with retry logic."""
@@ -19,13 +20,13 @@ def save_articles_to_db(article_data):
             summary=article_data.summary,
             categories=article_data.categories,
             published_at=article_data.published_at,
-            source=article_data.source
+            source=article_data.source,
         )
 
         session.add(article)
         session.commit()
         logger.info(f"✅ Article saved: {article.title[:50]}...")
-        
+
     except IntegrityError as e:
         session.rollback()
         logger.warning(f"Article with ID {article_data.id} already exists: {e}")
@@ -36,5 +37,3 @@ def save_articles_to_db(article_data):
         raise
     finally:
         session.close()
-
-   

@@ -14,7 +14,10 @@ _THRESHOLD = settings.service.cosine_similarity_threshold
 # Initialize vectorizer and keyword embeddings
 vectorizer = TfidfVectorizer().fit(_KEYWORDS)
 _kw_vecs = vectorizer.transform(_KEYWORDS)
-logger.info(f"Loaded {len(_KEYWORDS)} keyword embeddings for filtering with threshold {_THRESHOLD}")
+logger.info(
+    f"Loaded {len(_KEYWORDS)} keyword embeddings for filtering with threshold {_THRESHOLD}"
+)
+
 
 def mark_developer_focus(title: str, summary: str) -> bool:
     """Check if article has developer focus using keyword matching and cosine similarity."""
@@ -26,20 +29,22 @@ def mark_developer_focus(title: str, summary: str) -> bool:
         if kw.lower() in text:
             logger.debug(f"Keyword '{kw}' found in text.")
             return True
-    
+
     # Stage 2: Cosine similarity check
     try:
         doc_vec = vectorizer.transform([text])
         sims = cosine_similarity(doc_vec, _kw_vecs).flatten()
         max_sim = sims.max()
         logger.debug(f"Max cosine similarity with keywords: {max_sim:.3f}")
-        
+
         is_developer_focused = bool(max_sim > _THRESHOLD)
         if is_developer_focused:
-            logger.debug(f"Article marked as developer-focused (similarity: {max_sim:.3f})")
-        
+            logger.debug(
+                f"Article marked as developer-focused (similarity: {max_sim:.3f})"
+            )
+
         return is_developer_focused
-        
+
     except Exception as e:
         logger.error(f"Error in cosine similarity calculation: {e}")
         return False

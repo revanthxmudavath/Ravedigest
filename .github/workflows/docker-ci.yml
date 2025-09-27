@@ -41,8 +41,24 @@ jobs:
         tags: |
           type=ref,event=branch
           type=ref,event=pr
-          type=sha,prefix={{branch}}-
+          type=sha,prefix=sha-
           type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: List requirements.txt files for debugging
+      run: |
+        find services -name requirements.txt
+
+    - name: Install shared dependencies
+      run: |
+        set -e
+        set -x
+        python -m pip install --upgrade pip
+        pip install pytest pytest-asyncio fakeredis
+        pip install -r services/collector/requirements.txt
+        pip install -r services/analyzer/requirements.txt
+        pip install -r services/composer/requirements.txt
+        pip install -r services/notion_worker/requirements.txt
+        pip install -r services/scheduler/requirements.txt
 
     - name: Build service image
       uses: docker/build-push-action@v5
@@ -63,14 +79,14 @@ jobs:
 
         # Create test environment file
         cat > .env.test << EOF
-        POSTGRES_URL=postgresql://postgres:test_password@postgres:5432/test_db
+        POSTGRES_URL=postgresql://postgres:revanth123@postgres:5432/digest_db
         POSTGRES_USER=postgres
-        POSTGRES_PASSWORD=test_password
-        POSTGRES_DB=test_db
+        POSTGRES_PASSWORD=revanth123
+        POSTGRES_DB=digest_db
         REDIS_URL=redis://redis:6379/0
-        OPENAI_API_KEY=test-key-for-ci
-        NOTION_API_KEY=test-notion-key
-        NOTION_DB_ID=test-db-id
+        OPENAI_API_KEY=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
+        NOTION_API_KEY=ntn_F21715962124qnPaXBQtymGHubDp4uL0LpoZSn5chLk2pX
+        NOTION_DB_ID=2420816fedb480f086c3c94798039ea5
         LOG_LEVEL=DEBUG
         EOF
 
@@ -113,11 +129,11 @@ jobs:
         cp .env.example .env
         # Override with test values
         cat >> .env << EOF
-        POSTGRES_PASSWORD=test_password_123
-        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || 'test-key-for-integration' }}
-        NOTION_API_KEY=${{ secrets.NOTION_API_KEY || 'test-notion-key' }}
-        NOTION_DB_ID=${{ secrets.NOTION_DB_ID || 'test-db-id' }}
-        SCHEDULER_DAILY_TIME=01:20
+        POSTGRES_PASSWORD=revanth123
+        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || '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' }}
+        NOTION_API_KEY=${{ secrets.NOTION_API_KEY || 'ntn_F21715962124qnPaXBQtymGHubDp4uL0LpoZSn5chLk2pX' }}
+        NOTION_DB_ID=${{ secrets.NOTION_DB_ID || '2420816fedb480f086c3c94798039ea5' }}
+        SCHEDULER_DAILY_TIME=20:00
         LOG_LEVEL=INFO
         EOF
 

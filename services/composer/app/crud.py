@@ -7,6 +7,7 @@ from shared.utils.retry import retry
 
 logger = get_logger("composer.crud")
 
+
 @retry(retryable_exceptions=(Exception,))
 def get_top_articles(db: Session, limit: int = 20):
     """Get top developer-focused articles ordered by relevance score."""
@@ -25,18 +26,19 @@ def get_top_articles(db: Session, limit: int = 20):
         logger.error(f"Error querying top articles: {e}")
         raise
 
+
 @retry(retryable_exceptions=(Exception,))
 def create_digest(
-        db: Session, 
-        title: str, 
-        summary: str,
-        url: str,
-        source: str,
-    ) -> Digest:
+    db: Session,
+    title: str,
+    summary: str,
+    url: str,
+    source: str,
+) -> Digest:
     """Create a new digest in the database."""
     try:
         digest = Digest(
-            title=title, 
+            title=title,
             summary=summary,
             url=url,
             source=source,

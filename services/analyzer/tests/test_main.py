@@ -1,4 +1,5 @@
 """Basic tests for analyzer service."""
+
 import os
 import sys
 from unittest.mock import Mock, patch
@@ -12,16 +13,20 @@ def test_analyzer_imports():
         from services.analyzer.filter import mark_developer_focus
         from services.analyzer.main import app
         from services.analyzer.summarize import summarize_articles
+
         assert True
     except ImportError as e:
         pytest.fail(f"Import failed: {e}")
 
-@patch('services.analyzer.main.init_db')
+
+@patch("services.analyzer.main.init_db")
 def test_app_creation(mock_init_db):
     """Test that FastAPI app can be created."""
     from services.analyzer.main import app
+
     assert app is not None
     assert app.title == "Rave Digest Analyzer"
+
 
 def test_developer_focus_function():
     """Test developer focus detection function."""

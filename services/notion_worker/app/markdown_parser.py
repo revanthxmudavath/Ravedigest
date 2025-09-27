@@ -1,9 +1,10 @@
-#services.notion_worker.app.markdown_parser.py
+# services.notion_worker.app.markdown_parser.py
 import logging
 import re
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 def markdown_to_blocks(md: str) -> list[dict]:
     logger.info("📄 Starting markdown-to-Notion block parsing")
@@ -15,7 +16,7 @@ def markdown_to_blocks(md: str) -> list[dict]:
     for idx, raw in enumerate(articles):
         raw = raw.strip()
         if not raw:
-            continue 
+            continue
 
         logger.debug("🔍 Parsing article #%d", idx)
 
@@ -31,50 +32,65 @@ def markdown_to_blocks(md: str) -> list[dict]:
 
         logger.debug("Title: %s | Source: %s | URL: %s", title, source, url)
 
-        blocks.extend([
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{
-                        "type": "text",
-                        "text": {"content" : f"🔹 {title}", "link": {"url": url} if url else None}
-                    }]
-                }
-            },
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{
-                        "type": "text",
-                        "text": {"content": f"🌐 Source: {source}"}
-                    }]
-                }
-            },
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{
-                        "type": "text",
-                        "text": {"content": f"📝 Summary: {summary}"}
-                    }]
-                }   
-            },
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{
-                        "type": "text",
-                        "text": {"content": f"🔗 Read More", "link": {"url": url} if url else None}
-                    }]
-                }
-            },
-            {"object": "block", "type": "divider", "divider": {}}
-        ])
+        blocks.extend(
+            [
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": f"🔹 {title}",
+                                    "link": {"url": url} if url else None,
+                                },
+                            }
+                        ]
+                    },
+                },
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {"content": f"🌐 Source: {source}"},
+                            }
+                        ]
+                    },
+                },
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {"content": f"📝 Summary: {summary}"},
+                            }
+                        ]
+                    },
+                },
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": f"🔗 Read More",
+                                    "link": {"url": url} if url else None,
+                                },
+                            }
+                        ]
+                    },
+                },
+                {"object": "block", "type": "divider", "divider": {}},
+            ]
+        )
 
     logger.info("✅ Finished building %d Notion blocks", len(blocks))
     return blocks
-

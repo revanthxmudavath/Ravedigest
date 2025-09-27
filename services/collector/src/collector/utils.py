@@ -1,4 +1,4 @@
-#services/collector/src/collector/utils.py
+# services/collector/src/collector/utils.py
 import logging
 
 from shared.app_logging.logger import get_logger
@@ -11,6 +11,7 @@ from shared.utils.retry import retry
 logger = get_logger("collector.utils")
 settings = get_settings()
 
+
 @retry(retryable_exceptions=(Exception,))
 def is_duplicate(url: str) -> bool:
     """Check if URL has already been processed."""
@@ -20,6 +21,7 @@ def is_duplicate(url: str) -> bool:
     except Exception as e:
         logger.error(f"Redis error checking duplicate: {e}")
         return False
+
 
 @retry(retryable_exceptions=(Exception,))
 def mark_seen(url: str) -> None:
@@ -31,12 +33,13 @@ def mark_seen(url: str) -> None:
     except Exception as e:
         logger.error(f"Redis error marking URL as seen: {e}")
 
+
 @retry(retryable_exceptions=(Exception,))
 def publish_raw(article):
     """Publish raw article to Redis stream."""
     try:
         redis_client = get_redis_client("collector")
-        
+
         raw_msg = RawArticle(
             id=article.id,
             title=article.title,
@@ -46,7 +49,7 @@ def publish_raw(article):
             published_at=article.published_at,
             source=article.source,
         )
-        
+
         # Exclude None values from the message payload
         message_data = raw_msg.model_dump(exclude_none=True)
 
@@ -54,10 +57,10 @@ def publish_raw(article):
             "raw_articles",
             message_data,
             maxlen=settings.service.stream_max_length,
-            approximate=True
+            approximate=True,
         )
         logger.info(f"Published raw article to stream: {message_id}")
-        
+
     except Exception as e:
         logger.error(f"Error publishing raw article: {e}")
         raise

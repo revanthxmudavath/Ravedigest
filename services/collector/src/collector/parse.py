@@ -10,6 +10,7 @@ from shared.app_logging.logger import get_logger
 
 logger = get_logger("collector.parse")
 
+
 def parse_timestamp(source: str, ts_raw: str) -> datetime:
     """
     Try ISO8601 first, then fall back to RFC-style dates.
@@ -33,19 +34,20 @@ def parse_timestamp(source: str, ts_raw: str) -> datetime:
     except Exception:
         return None
 
+
 def parse_feed(url: str, source: str) -> List[Article]:
     feed = feedparser.parse(url)
     entries = []
     for item in feed.entries:
         try:
-            
+
             title = item.get("title", "").strip()
             link = item.get("link", "").strip()
 
             desc = item.get("description") or item.get("summary", "")
             if not desc and item.get("content"):
                 desc = item.content[0].value
-            
+
             published = None
             if item.get("published_parsed"):
                 published = datetime(*item.published_parsed[:6])
@@ -53,9 +55,12 @@ def parse_feed(url: str, source: str) -> List[Article]:
                 # fall back to raw strings
                 raw_ts = item.get("published") or item.get("updated") or ""
                 published = parse_timestamp(source, raw_ts)
-            
-            categories = [cat.term if hasattr(cat, "term") else cat for cat in item.get("tags", [])]
-            
+
+            categories = [
+                cat.term if hasattr(cat, "term") else cat
+                for cat in item.get("tags", [])
+            ]
+
             article = Article(
                 id=uuid4(),
                 title=title,
@@ -63,12 +68,12 @@ def parse_feed(url: str, source: str) -> List[Article]:
                 summary=desc,
                 categories=categories,
                 published_at=published,
-                source=source
+                source=source,
             )
             entries.append(article)
-            
+
         except Exception as e:
             logger.error(f"Error parsing feed {url}: {e}")
             continue
-    
+
     return entries

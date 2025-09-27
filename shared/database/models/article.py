@@ -7,7 +7,7 @@ from ..base import Base
 
 
 class Article(Base):
-    __tablename__ = 'rave_articles'
+    __tablename__ = "rave_articles"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(Text, nullable=False)

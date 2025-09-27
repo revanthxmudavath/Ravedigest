@@ -1,4 +1,5 @@
 """Basic tests for scheduler service."""
+
 import os
 import sys
 from unittest.mock import Mock, patch
@@ -10,17 +11,21 @@ def test_scheduler_imports():
     """Test that scheduler modules can be imported."""
     try:
         from services.scheduler.src.main import app, daily_job
+
         assert True
     except ImportError as e:
         pytest.fail(f"Import failed: {e}")
 
+
 def test_app_creation():
     """Test that FastAPI app can be created."""
     from services.scheduler.src.main import app
+
     assert app is not None
 
-@patch('requests.get')
-@patch('requests.post')
+
+@patch("requests.get")
+@patch("requests.post")
 def test_daily_job_functions(mock_post, mock_get):
     """Test that daily job functions can be imported."""
     from services.scheduler.src.main import trigger_collector, trigger_composer
