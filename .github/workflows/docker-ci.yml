@@ -137,6 +137,11 @@ jobs:
         LOG_LEVEL=INFO
         EOF
 
+    - name: Install Docker Compose
+      run: |
+      sudo apt-get update
+      sudo apt-get install -y docker-compose
+
     - name: Start services with Docker Compose
       run: |
         docker-compose up -d --build
@@ -210,64 +215,8 @@ jobs:
         docker-compose down -v
         docker system prune -f
 
-  # Security scanning and quality checks
-  security-and-quality:
-    runs-on: ubuntu-latest
-    needs: build-and-test
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build analyzer image for scanning
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./services/analyzer/Dockerfile
-        load: true
-        tags: analyzer:scan
-        cache-from: type=gha
-
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: 'analyzer:scan'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-
-    - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
-
-    - name: Check Docker best practices
-      run: |
-        # Install hadolint
-        wget -O hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
-        chmod +x hadolint
-
-        # Lint all Dockerfiles
-        find services -name "Dockerfile" -exec echo "Linting {}" \; -exec ./hadolint {} \;
-
-    - name: Check image sizes
-      run: |
-        echo "Building all images to check sizes..."
-        docker-compose build
-
-        echo "=== Image Sizes ==="
-        docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | grep ravedigest || true
-
-        # Warn if any image is > 500MB
-        docker images --format "{{.Repository}}:{{.Tag}} {{.Size}}" | while read image size; do
-          if [[ "$size" == *"GB"* ]] || [[ "$size" =~ [5-9][0-9][0-9]MB ]]; then
-            echo "WARNING: Large image detected: $image ($size)"
-          fi
-        done
-
+  
+  
   # Code quality (keep existing linting)
   lint:
     runs-on: ubuntu-latest

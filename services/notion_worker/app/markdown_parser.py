@@ -14,8 +14,8 @@ def truncate_text(text: str, max_length: int = 2000, suffix: str = "...") -> str
     # Leave room for suffix
     truncate_at = max_length - len(suffix)
     # Try to break at word boundary
-    if ' ' in text[:truncate_at]:
-        last_space = text[:truncate_at].rfind(' ')
+    if " " in text[:truncate_at]:
+        last_space = text[:truncate_at].rfind(" ")
         if last_space > truncate_at - 100:  # Don't break too early
             truncate_at = last_space
 
