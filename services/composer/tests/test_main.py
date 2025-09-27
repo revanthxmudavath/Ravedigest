@@ -10,7 +10,8 @@ import pytest
 def test_composer_imports():
     """Test that composer modules can be imported."""
     try:
-        from services.composer.app.digest_utils import generate_and_publish_digest
+        from services.composer.app.digest_utils import \
+            generate_and_publish_digest
         from services.composer.app.main import app
 
         assert True

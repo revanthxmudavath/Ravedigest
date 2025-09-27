@@ -4,11 +4,8 @@ import asyncio
 import redis
 
 from services.notion_worker.app.markdown_parser import markdown_to_blocks
-from services.notion_worker.app.notion_client import (
-    DATABASE_ID,
-    notion,
-    publish_to_notion,
-)
+from services.notion_worker.app.notion_client import (DATABASE_ID, notion,
+                                                      publish_to_notion)
 from services.notion_worker.app.utils import retry_with_backoff
 from shared.app_logging.logger import get_logger
 from shared.config.settings import get_settings
