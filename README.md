@@ -11,20 +11,73 @@ RaveDigest implements a modern event-driven microservices architecture with the 
 
 ```mermaid
 graph LR
-    A[RSS Sources] --> B[Collector Service]
-    B --> C[Redis Streams]
-    C --> D[Analyzer Service]
-    D --> C
-    C --> E[Composer Service]
-    E --> C
-    C --> F[Notion Worker]
-    G[Scheduler Service] --> H[Orchestration]
-    H --> B
-    H --> E
-    I[PostgreSQL] --> B
-    I --> D
-    I --> E
-    J[Prometheus] --> D
+  %% Layout
+  classDef ext fill:#f7f7ff,stroke:#99f,stroke-width:1px;
+  classDef svc fill:#f8fff7,stroke:#6a6,stroke-width:1px;
+  classDef bus fill:#fff7f7,stroke:#c77,stroke-width:1px;
+  classDef data fill:#fefaf2,stroke:#b86,stroke-width:1px;
+  classDef ops fill:#f6faff,stroke:#68a,stroke-width:1px;
+
+  %% External
+  A[RSS Sources]
+  G[Scheduler Service]
+
+  %% Orchestration
+  H[Orchestration]
+
+  %% Event Bus
+  subgraph C["Redis Streams"]
+    C1[[raw_articles]]
+    C2[[enriched_articles]]
+    C3[[digest_stream]]
+  end
+  %% Style subgraph explicitly
+  style C fill:#fff7f7,stroke:#c77,stroke-width:1px
+
+  %% Services
+  B[Collector Service]
+  D[Analyzer Service]
+  E[Composer Service]
+  F[Notion Worker]
+
+  %% State & Monitoring
+  I[(PostgreSQL)]
+  J[(Prometheus)]
+  Notion[(Notion API)]
+
+  %% Class assignments
+  class A,G ext
+  class B,D,E,F svc
+  class I data
+  class J ops
+
+  %% Ingestion
+  A -->|fetch| B
+  B -->|publish raw| C1
+  B <-->|read/write| I
+
+  %% Analysis
+  C1 -->|consume| D
+  D -->|publish enriched| C2
+  D <-->|read/write| I
+  J -->|scrape metrics| D
+
+  %% Compose Digest
+  C2 -->|consume| E
+  E -->|publish digest-ready| C3
+  E <-->|read/write| I
+
+  %% Publish to Notion
+  C3 -->|consume| F
+  F -->|publish| Notion[(Notion API)]
+  F -.->|set status/dedup | I
+
+%% Scheduling
+G --> H
+H -->|trigger| B
+H -->|trigger| E
+
+
 ```
 
 ### Services Architecture
