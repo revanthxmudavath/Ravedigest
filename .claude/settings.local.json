@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//f/tmp/**)"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}
